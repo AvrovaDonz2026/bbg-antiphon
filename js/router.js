@@ -70,6 +70,14 @@ window.Antiphon = window.Antiphon || {};
 
     var main = document.getElementById("main");
     main.innerHTML = result.html;
+
+    /* Motion is opted into per paint: the class starts the staggered reveal in
+       css/motion.css, and removing it before the swap means a second visit to
+       the same view replays the animation instead of staying inert.
+       reflow-reading `offsetWidth` restarts the animation cleanly. */
+    main.classList.remove("motion-reveal");
+    void main.offsetWidth;
+    main.classList.add("motion-reveal");
     if (typeof result.after === "function") {
       try {
         await result.after(main);
