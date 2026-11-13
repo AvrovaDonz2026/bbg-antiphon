@@ -177,8 +177,15 @@ window.Antiphon = window.Antiphon || {};
     var text = node.nodeValue || "";
     if (!text) return;
     var first = Array.from(text)[0];
-    /* CJK only. A 3em Songti initial dropped into English reads as pastiche;
-       Latin openings use a small-caps first line instead (see css/base.css). */
+    /* CJK only, and only where the script layer asks for one. A 3em Songti
+       initial dropped into English reads as pastiche; Latin opens with a
+       small-caps first line instead. Korean and Arabic have no initial-letter
+       treatment at all — Hangul is caseless and Arabic is joined — so the script
+       class gates the insertion rather than the character test alone. The
+       character test still matters: an English article quoted inside a Chinese
+       site must not take a Chinese drop cap. */
+    var script = A.script || (A.scriptOf ? A.scriptOf(A.lang) : "cjk");
+    if (script === "latin" || script === "cyrillic" || script === "arabic" || script === "ko") return;
     var isCjk = /[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]/u.test(first);
     if (!isCjk) return;
     var span = document.createElement("span");

@@ -51,6 +51,14 @@
   --font-cjk: "Songti SC", "Songti TC", "Noto Serif SC", "Source Han Serif SC", "Source Han Serif CN", STSong, serif;
   --font-serif: var(--font-latin), var(--font-cjk), serif;
 
+  /* The Gothic counterparts. Needed separately from --font-ui-sans: that stack
+     is tuned for 14px chrome, while the sans body presets in css/fonts.css need
+     a face that holds up at reading size. Keeping them as their own custom
+     property means a sans preset can swap --font-cjk without having to know
+     which language is active. */
+  --font-cjk-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans SC", "Source Han Sans SC", sans-serif;
+
   /* display: same faces, opt into fuller optical sizes for headlines */
   --font-display: var(--font-latin), var(--font-cjk), serif;
 
@@ -191,6 +199,8 @@ body[data-script="ja"],
 body:not([data-script]):lang(ja) {
   --font-cjk: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP",
     "Source Han Serif JP", "Songti SC", serif;
+  --font-cjk-sans: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
+    "Source Han Sans JP", "PingFang SC", sans-serif;
   --font-serif: var(--font-latin), var(--font-cjk), serif;
   --font-display: var(--font-latin), var(--font-cjk), serif;
   --font-mono-cjk: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
@@ -228,4 +238,117 @@ body:not([data-script]):lang(en) {
   --script-dropcap: 2.6em;
   --script-title-tracking: -0.02em;
   --script-h2-tracking: -0.01em;
+}
+
+/* ——— hant: Traditional Chinese
+   Follows the CJK rhythm — ideographs need the same generous leading and the
+   same wide measure as Simplified — but the font stack has to prefer TC faces,
+   because Songti SC will happily render Traditional glyphs with Simplified
+   shapes for a fair number of characters. Own drop-cap box: the TC Song faces
+   sit slightly smaller on the em than SC ones. */
+
+body[data-script="hant"],
+body:not([data-script]):lang(zh-Hant),
+body:not([data-script]):lang(zh-TW),
+body:not([data-script]):lang(zh-HK) {
+  --font-cjk: "Songti TC", "Songti SC", "Noto Serif TC", "Source Han Serif TC",
+    "Source Han Serif TW", STSong, serif;
+  --font-serif: var(--font-latin), var(--font-cjk), serif;
+  --font-display: var(--font-latin), var(--font-cjk), serif;
+  --font-cjk-sans: "PingFang TC", "Hiragino Sans CNS", "Microsoft JhengHei",
+    "Noto Sans TC", "Source Han Sans TC", sans-serif;
+  --font-mono-cjk: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", monospace;
+  --font-mono: var(--font-mono-latin), var(--font-mono-cjk), monospace;
+  --leading-body: 1.82;
+  --measure: 40rem;
+  --text-body: 1.0625rem;
+  --para-gap: 1.3em;
+  --script-dropcap: 2.92em;
+  --script-title-tracking: 0.02em;
+  --script-h2-tracking: -0.008em;
+}
+
+/* ——— ko: Korean
+   Hangul is a recorded-in-blocks script with very even optical density, so it
+   takes a slightly shorter measure than CJK: at 40rem the line becomes a wall
+   of identical syllables and the eye loses its place. Leading is the loosest
+   of any script here, and there is no drop cap — a magnified syllable reads as
+   a typo rather than a flourish. */
+
+body[data-script="ko"],
+body:not([data-script]):lang(ko) {
+  --font-cjk: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Serif KR",
+    "Source Han Serif KR", "Nanum Myeongjo", serif;
+  --font-serif: var(--font-latin), var(--font-cjk), serif;
+  --font-display: var(--font-latin), var(--font-cjk), serif;
+  --font-cjk-sans: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR",
+    "Source Han Sans KR", sans-serif;
+  --font-mono-cjk: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", monospace;
+  --font-mono: var(--font-mono-latin), var(--font-mono-cjk), monospace;
+  --leading-body: 1.78;
+  --measure: 37rem;
+  --text-body: 1.03rem;
+  --para-gap: 1.24em;
+  --text-entry: 1.34rem;
+  --text-display: clamp(2.1rem, 4.8vw, 3.2rem);
+  --text-article-title: clamp(1.8rem, 3.9vw, 2.75rem);
+  --text-lede: clamp(1.12rem, 1.8vw, 1.36rem);
+}
+
+/* ——— cyrillic
+   Follows the Latin scale almost exactly: Cyrillic lowercase is a little
+   narrower on average, so the measure opens by a hair, and the leading drops a
+   fraction because the x-height reads large. No drop cap — the Latin preset
+   already swapped it for an all-small-caps opener, and that treatment carries
+   over unchanged. */
+
+body[data-script="cyrillic"],
+body:not([data-script]):lang(ru),
+body:not([data-script]):lang(uk),
+body:not([data-script]):lang(bg),
+body:not([data-script]):lang(sr) {
+  --leading-body: 1.6;
+  --measure: 35rem;
+  --text-body: 1.0625rem;
+  --para-gap: 1.12em;
+  --text-h2: clamp(1.5rem, 2.2vw, 1.85rem);
+  --text-h3: 1.16rem;
+  --text-entry: 1.4rem;
+  --text-display: clamp(2.25rem, 5vw, 3.4rem);
+  --text-article-title: clamp(1.9rem, 4vw, 2.9rem);
+  --text-lede: clamp(1.16rem, 1.85vw, 1.42rem);
+  --script-title-tracking: -0.018em;
+  --script-h2-tracking: -0.008em;
+}
+
+/* ——— arabic
+   Right-to-left with a connected script: the measure has to stay inside the
+   comfortable scan length for cursive text, which is shorter than Latin, and
+   the leading has to clear the ascender/descender collisions Arabic makes
+   unavoidable. No drop cap, and no small-caps opener either — both are Latin
+   devices. `text-autospace` is neutralised because it exists to space CJK
+   against Latin, and applying it to Arabic word boundaries inserts gaps where
+   the script has its own joining rules. */
+
+body[data-script="arabic"],
+body:not([data-script]):lang(ar),
+body:not([data-script]):lang(fa),
+body:not([data-script]):lang(ur) {
+  --font-cjk: "Geeza Pro", "Noto Naskh Arabic", "Amiri", "Times New Roman", serif;
+  --font-serif: var(--font-latin), var(--font-cjk), serif;
+  --font-display: var(--font-latin), var(--font-cjk), serif;
+  --font-cjk-sans: "Geeza Pro", "Noto Sans Arabic", "Segoe UI", sans-serif;
+  --leading-body: 1.88;
+  --measure: 32rem;
+  --text-body: 1.09rem;
+  --para-gap: 1.3em;
+  --text-h2: clamp(1.45rem, 2.1vw, 1.8rem);
+  --text-h3: 1.14rem;
+  --text-entry: 1.32rem;
+  --text-display: clamp(2rem, 4.6vw, 3.1rem);
+  --text-article-title: clamp(1.75rem, 3.8vw, 2.7rem);
+  --text-lede: clamp(1.1rem, 1.75vw, 1.34rem);
+  --script-title-tracking: 0;
+  --script-h2-tracking: 0;
+  text-autospace: no-autospace;
 }

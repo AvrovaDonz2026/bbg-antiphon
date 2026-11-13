@@ -87,7 +87,10 @@ window.Antiphon = window.Antiphon || {};
     }
     if (token !== renderToken) return;
 
-    var siteTitle = A.state.blog ? A.state.blog["博客标题"] || "对经" : "对经";
+    /* The fallback site name is the theme's Latin brand, not the literal
+       Chinese "对经": a site with no 博客标题 set must not put a Chinese word
+       in the tab of every English, Arabic or Portuguese visitor. */
+    var siteTitle = A.state.blog ? A.state.blog["博客标题"] || "Antiphon" : "Antiphon";
     document.title = result.title ? result.title + " - " + siteTitle : siteTitle;
 
     window.scrollTo(0, 0);

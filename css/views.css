@@ -53,7 +53,7 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--seal);
-  text-align: left;
+  text-align: start;
 }
 
 .signal-divider {
@@ -95,7 +95,7 @@
 .announcement::before {
   content: "";
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0;
   bottom: 0;
   width: 2px;
@@ -136,8 +136,12 @@
 
 .verse {
   margin: 0 0 2.4rem;
-  padding: 0 0 0 1.3rem;
-  border-left: 1px solid var(--rule-2);
+  /* Lofted as a shorthand would be a physical left padding: it has to be the
+     inline-start edge, or an Arabic pull-quote gets its indent on the wrong
+     side of the text it is indenting. */
+  padding: 0;
+  padding-inline-start: 1.3rem;
+  border-inline-start: 1px solid var(--rule-2);
   font-family: var(--font-serif);
   font-style: italic;
   font-size: 1.02rem;
@@ -170,9 +174,13 @@
   grid-template-columns: calc(3.4rem - 3px) minmax(0, 1fr);
   gap: 1.4rem 1.5rem;
   margin: 0 0 2.2rem;
-  /* 3px on the left is the stripe's own gutter, not a border: the text grid
-     starts at the same x as before, so the axis below is untouched */
-  padding: 1.5rem 1.5rem 1.55rem 3px;
+  /* 3px on the inline-start edge is the stripe's own gutter, not a border: the
+     text grid starts at the same x as before, so the axis below is untouched.
+     Written as block+inline shorthands so the mirror direction keeps its 1.5rem
+     inset on the side opposite the stripe. */
+  padding-block: 1.5rem 1.55rem;
+  padding-inline: 1.5rem;
+  padding-inline-start: 3px;
   position: relative;
   background-color: transparent;
   /* a pool of warmer light on the paper; fades out well before the edges */
@@ -219,7 +227,7 @@ body[data-mode="night"] .lead {
 .lead::after {
   content: "";
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0;
   bottom: 0;
   width: 3px;
@@ -238,15 +246,15 @@ body[data-mode="night"] .lead {
   padding-top: 0.1rem;
   /* the column divider feathers top and bottom rather than running edge to
      edge: a rule that stops dead would rebuild the frame we just removed */
-  border-right: 0;
-  padding-right: 0.85rem;
+  border-inline-end: 0;
+  padding-inline-end: 0.85rem;
   position: relative;
 }
 
 .lead-fig::after {
   content: "";
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   top: 0;
   bottom: 0;
   width: 1px;
@@ -403,7 +411,7 @@ body[data-mode="night"] .lead {
 
 .pinned-mark {
   display: inline-block;
-  margin-left: 0.6rem;
+  margin-inline-start: 0.6rem;
   padding: 0.18em 0.42em 0.2em;
   border: 1px solid var(--seal);
   font-family: var(--font-mono);
@@ -476,7 +484,7 @@ body[data-script="latin"] .lead-title {
 
 .entry-side {
   padding-top: 0.35rem;
-  text-align: right;
+  text-align: end;
   font-family: var(--font-mono);
   font-size: 0.63rem;
   letter-spacing: 0.12em;
@@ -501,7 +509,7 @@ body[data-script="latin"] .lead-title {
 
 .tag-link::before {
   content: "#";
-  margin-right: 0.1em;
+  margin-inline-end: 0.1em;
   color: var(--rule-2);
 }
 
@@ -567,7 +575,7 @@ body[data-script="latin"] .lead-title {
 .stamp {
   position: absolute;
   top: 0.1rem;
-  right: 0;
+  inset-inline-end: 0;
   padding: 0.3rem 0.55rem 0.34rem;
   border: 1px solid var(--seal);
   color: var(--seal);
@@ -586,7 +594,7 @@ body[data-script="latin"] .lead-title {
   align-items: baseline;
   gap: 0.4rem 1rem;
   margin-bottom: 1.15rem;
-  padding-right: 6rem;
+  padding-inline-end: 6rem;
   font-family: var(--font-mono);
 }
 
@@ -672,17 +680,19 @@ body:not([data-script]):lang(en) .article-dek {
 }
 
 .catalog-cell {
-  padding: 0.7rem 0.9rem 0.75rem 0;
-  border-right: 1px solid var(--rule);
+  padding: 0.7rem 0 0.75rem;
+  padding-inline-end: 0.9rem;
+  padding-inline-start: 0;
+  border-inline-end: 1px solid var(--rule);
   font-variant-numeric: tabular-nums;
 }
 
 .catalog-cell:last-child {
-  border-right: 0;
+  border-inline-end: 0;
 }
 
 .catalog-cell + .catalog-cell {
-  padding-left: 0.9rem;
+  padding-inline-start: 0.9rem;
 }
 
 .catalog-key {
@@ -806,7 +816,7 @@ body:not([data-script]):lang(en) .article-dek {
 }
 
 .prevnext-item--next {
-  text-align: right;
+  text-align: end;
 }
 
 .prevnext-empty {
@@ -1158,7 +1168,7 @@ body:not([data-script]):lang(en) .article-dek {
 .viewer-close {
   position: absolute;
   top: 0.6rem;
-  right: 0.8rem;
+  inset-inline-end: 0.8rem;
   width: 2rem;
   height: 2rem;
   color: var(--muted);
@@ -1205,7 +1215,7 @@ body:not([data-script]):lang(en) .article-dek {
 
 .result-no {
   display: inline-block;
-  margin-right: 0.55rem;
+  margin-inline-end: 0.55rem;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   font-weight: 400;
@@ -1281,7 +1291,7 @@ body:not([data-script]):lang(en) .article-dek {
 /* ——— 404 ——— */
 
 .not-found {
-  text-align: left;
+  text-align: start;
   padding: 1rem 0 0.5rem;
 }
 
@@ -1368,13 +1378,13 @@ body:not([data-script]):lang(en) .article-dek {
      lead's copy on the same axis as the entry titles (2.6rem + 1.5rem, minus
      the 3px stripe gutter the lead already carries) */
   .lead-body {
-    padding-left: calc(2.6rem + 1.5rem - 3px);
+    padding-inline-start: calc(2.6rem + 1.5rem - 3px);
   }
   .lead-fig {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    border-right: 0;
+    border-inline-end: 0;
     border-bottom: 1px solid var(--rule);
     padding: 0 0 0.6rem;
   }
@@ -1391,7 +1401,7 @@ body:not([data-script]):lang(en) .article-dek {
 
 @media (max-width: 640px) {
   .stamp { display: none; }
-  .article-kicker { padding-right: 0; }
+  .article-kicker { padding-inline-end: 0; }
   .sec-head {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -1407,38 +1417,40 @@ body:not([data-script]):lang(en) .article-dek {
   .entry-excerpt { font-size: 0.9rem; }
   .lead {
     /* single column here, so the body must sit on the entries' axis — which is
-       flush with the sheet's text edge. No left inset: the stripe moves outside
-       the box instead of pushing the text right. */
-    padding: 1.2rem 1.1rem 1.3rem 0;
+       flush with the sheet's text edge. No inline-start inset: the stripe moves
+       outside the box instead of pushing the text inward. */
+    padding-block: 1.2rem 1.3rem;
+    padding-inline: 1.1rem;
+    padding-inline-start: 0;
   }
   .lead-body {
-    padding-left: 0;
+    padding-inline-start: 0;
   }
   .lead::after {
     /* the lead's text is flush with the sheet's text edge here, so the stripe
        overhangs into the sheet's own padding instead of the text column */
-    left: -2px;
+    inset-inline-start: -2px;
     width: 2px;
   }
   /* the announcement stripe steps out by the same 2px so the two vertical
      marks above and below stack on one x */
   .announcement::before {
-    left: -2px;
+    inset-inline-start: -2px;
   }
   .lead-title { font-size: 1.55rem; }
   .prevnext {
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
-  .prevnext-item--next { text-align: left; }
+  .prevnext-item--next { text-align: start; }
   .archive-row { grid-template-columns: 2.6rem 1fr; }
   .friends { grid-template-columns: 1fr; }
   .article-catalog { grid-template-columns: 1fr 1fr; }
-  .catalog-cell { padding-right: 0.9rem; }
-  .catalog-cell + .catalog-cell { padding-left: 0; border-right: 0; }
+  .catalog-cell { padding-inline-end: 0.9rem; }
+  .catalog-cell + .catalog-cell { padding-inline-start: 0; border-inline-end: 0; }
   .catalog-cell:nth-child(even) {
-    padding-left: 0.9rem;
-    border-left: 1px solid var(--rule);
+    padding-inline-start: 0.9rem;
+    border-inline-start: 1px solid var(--rule);
   }
   .catalog-cell:nth-child(-n + 2) { border-bottom: 1px solid var(--rule); }
 }

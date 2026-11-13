@@ -27,6 +27,81 @@ window.Antiphon = window.Antiphon || {};
     return /^(https?:)?\/\//i.test(text) || /^\.?\//.test(text);
   }
 
+  /* The favicon config is a path hint, never a requirement: index.html ships the
+     theme's own sigil as an inline data URI, and tools/build.sh packs only
+     index.html, css/, js/ and themecfg/, so the theme cannot ship a separate
+     icon file. Build the candidate defensively before probing it. */
+  function staticIconPath(stat) {
+    var dir = String((stat && stat["资源目录"]) || "").trim();
+    var file = String((stat && stat["网页图标文件名"]) || "").trim();
+    if (!dir || !file) return "";
+    /* Reject a configured value that names a host before normalizing anything:
+       "https://elsewhere" or "//elsewhere" must never become a path here. */
+    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(dir) || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(file)) {
+      return "";
+    }
+    /* Normalize the rest: a leading "./" is redundant, a trailing "/" would
+       double the separator, and a leading "/" would silently retarget the icon
+       at the domain root instead of the configured directory. */
+    dir = dir.replace(/^(?:\.\/)+/, "").replace(/^\/+/, "").replace(/\/+$/, "");
+    file = file.replace(/^(?:\.\/)+/, "").replace(/^\/+/, "").replace(/\/+$/, "");
+    if (!dir || !file) return "";
+    /* A configured value must stay inside the site: no parent-directory climb. */
+    if (dir.split("/").indexOf("..") !== -1 || file.split("/").indexOf("..") !== -1) return "";
+    var path = "./" + dir + "/" + file;
+    if (!isSafeUrl(path)) return "";
+    /* isSafeUrl accepts any relative URL, so resolve it against the document
+       base and require the result to stay under the site root. */
+    var resolved, root;
+    try {
+      resolved = new URL(path, document.baseURI);
+      root = new URL("./", document.baseURI);
+    } catch (error) {
+      return "";
+    }
+    if (resolved.origin !== window.location.origin) return "";
+    if (resolved.pathname.indexOf(root.pathname) !== 0) return "";
+    return path;
+  }
+
+  /* Probe before swapping. The <link href> keeps pointing at the inline sigil
+     until the candidate has actually decoded, so a missing file costs one
+     background request instead of a 404 tab icon, and a site that does host the
+     file only replaces the sigil once the replacement is known to work. */
+  function applySiteIcon(stat) {
+    var icon = document.querySelector('link[rel="icon"]');
+    if (!icon) return;
+    var path = staticIconPath(stat);
+    if (!path) return;
+
+    var probe = new Image();
+    var settled = false;
+    var timer = setTimeout(function () {
+      finish(false, "3 秒内未加载完成");
+    }, 3000);
+
+    function finish(ok, reason) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      probe.onload = null;
+      probe.onerror = null;
+      if (ok) {
+        icon.href = path;
+      } else {
+        console.warn(
+          "[Antiphon] 站点配置的网页图标不可用，保留主题内置图标：",
+          path,
+          "（" + reason + "）"
+        );
+      }
+    }
+
+    probe.onload = function () { finish(true); };
+    probe.onerror = function () { finish(false, "文件不存在或不是可解码的图片"); };
+    probe.src = path;
+  }
+
   /* The per-language defaults live in css/tokens.css as body[data-script] rules.
      applyCfg() only intervenes when the blog owner asks for something different:
      外观.版心宽度（rem） wins outright, and the 使版心宽度更窄 switch narrows
@@ -34,10 +109,15 @@ window.Antiphon = window.Antiphon || {};
      deliberate: the token layer declares --measure there too, so an inline value
      on <body> is the only thing that reliably wins over it. */
   /* 使版心宽度更窄 subtracts 4rem from whichever language default is in force,
-     matching how the switch behaved before the language scale was introduced. */
+     matching how the switch behaved before the language scale was introduced.
+     Keyed on the resolved script rather than a language name, because there are
+     now more than three languages: every Latin/Cyrillic/Arabic language takes
+     the narrow end of the western measure, Japanese the CJK-minus-4 value, and
+     the CJK/Hangul scripts fall in between. */
   function narrowMeasure() {
-    if (A.lang === "English") return 30;
-    if (A.lang === "日本語") return 34;
+    var script = A.script || (A.scriptOf ? A.scriptOf(A.lang) : "cjk");
+    if (script === "latin" || script === "cyrillic" || script === "arabic") return 30;
+    if (script === "ja") return 34;
     return 36;
   }
 
@@ -103,13 +183,41 @@ window.Antiphon = window.Antiphon || {};
     document.body.classList.toggle("has-wall-image", hasImage);
 
     var stat = blog["静态资源"] || {};
-    var icon = document.querySelector('link[rel="icon"]');
-    if (icon && stat["资源目录"] && stat["网页图标文件名"]) {
-      icon.href = "./" + stat["资源目录"] + "/" + stat["网页图标文件名"];
-    }
-    var description = document.querySelector('meta[name="description"]');
-    if (description) description.setAttribute("content", String(blog["博客描述（副标题）"] || ""));
+    applySiteIcon(stat);
+    applyMetadata(blog);
   }
+
+  /* Document metadata follows the shell, not just the site config. The title
+     and description are authored content and are never translated here — the
+     theme cannot know what a Chinese subtitle should say in German — but the
+     resolved locale must reach the document so the page declares the language
+     of its own chrome, and og:locale has to agree with html[lang] or social
+     cards advertise the wrong language to every non-Chinese visitor. */
+  function applyMetadata(blog) {
+    blog = blog || A.state.blog || {};
+    var localized = A.state.langMeta || {};
+    var title = String(blog["博客标题"] || "Antiphon");
+    var description = String((localized.description) || blog["博客描述（副标题）"] || "");
+    var info = A.localeInfo(A.lang);
+    var descriptionNode = document.querySelector('meta[name="description"]');
+    if (descriptionNode) descriptionNode.setAttribute("content", description);
+
+    ["og:title", "og:description", "og:locale", "og:site_name"].forEach(function (name) {
+      var node = document.querySelector('meta[property="' + name + '"]');
+      if (!node) return;
+      if (name === "og:title" || name === "og:site_name") node.setAttribute("content", title);
+      else if (name === "og:description") node.setAttribute("content", description);
+      else node.setAttribute("content", info.htmlLang.replace("-", "_"));
+    });
+    var localeNode = document.querySelector('meta[http-equiv="content-language"]');
+    if (localeNode) localeNode.setAttribute("content", info.htmlLang);
+
+    /* Only the bare shell carries the placeholder title; a rendered route has
+       already written "a specific page — site", which must survive. */
+    if (document.title === "Antiphon") document.title = title;
+  }
+
+  A.applyMetadata = applyMetadata;
 
   function randomVisitor() {
     var bytes = null;
@@ -242,15 +350,177 @@ window.Antiphon = window.Antiphon || {};
   A.openViewer = openViewer;
   A.closeViewer = closeViewer;
 
-  function bindShell() {
-    var searchBtn = document.getElementById("search-btn");
-    if (searchBtn && A.views.openSearch) {
-      searchBtn.addEventListener("click", function () { A.views.openSearch(); });
+  /* ——— typeface choice ———
+     Four presets, persisted per device. `antiphon` is the absence of a
+     data-font attribute: the token layer's own stack, unchanged. The others are
+     pure CSS overrides in css/fonts.css, so this function only decides which
+     attribute to wear — no font strings are duplicated in JS. */
+  var FONT_KEY = "antiphon:font";
+  var FONTS = ["antiphon", "humanist", "grotesk", "mono"];
+
+  A.getFont = function () {
+    var stored = null;
+    try { stored = localStorage.getItem(FONT_KEY); } catch (error) {}
+    return FONTS.indexOf(stored) >= 0 ? stored : "antiphon";
+  };
+
+  function applyFont(name) {
+    var font = FONTS.indexOf(name) >= 0 ? name : "antiphon";
+    if (font === "antiphon") document.body.removeAttribute("data-font");
+    else document.body.setAttribute("data-font", font);
+    var menu = document.getElementById("font-menu");
+    if (menu) {
+      Array.prototype.forEach.call(
+        menu.querySelectorAll("[data-font-choice]"),
+        function (item) {
+          item.setAttribute("aria-checked", item.getAttribute("data-font-choice") === font ? "true" : "false");
+        }
+      );
     }
-    var modeBtn = document.getElementById("mode-btn");
-    if (modeBtn) modeBtn.addEventListener("click", toggleMode);
-    var lightBtn = document.getElementById("light-btn");
-    if (lightBtn) lightBtn.addEventListener("click", toggleLight);
+    return font;
+  }
+
+  A.setFont = function (name) {
+    var font = applyFont(name);
+    try { localStorage.setItem(FONT_KEY, font); } catch (error) {}
+    return font;
+  };
+
+  function setFontMenuOpen(open) {
+    var button = document.getElementById("font-btn");
+    var menu = document.getElementById("font-menu");
+    if (!button || !menu) return;
+    menu.hidden = !open;
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  /* ——— masthead popovers ———
+     V.renderShell() rebuilds the whole masthead from a string, and chooseLocale()
+     calls it after every pick, so any listener attached to #font-btn,
+     #font-menu, #lang-btn or #lang-menu is destroyed with the node it was
+     attached to. Both popovers therefore delegate from the document and resolve
+     the live button and menu by id at event time; no node reference survives a
+     repaint, so the shell can be re-rendered any number of times. */
+  function bindFontMenu() {
+    document.addEventListener("click", function (event) {
+      var target = event.target;
+      if (!target || !target.closest) return;
+
+      if (target.closest("#font-btn")) {
+        var menu = document.getElementById("font-menu");
+        if (menu) setFontMenuOpen(menu.hidden);
+        return;
+      }
+
+      var item = target.closest("[data-font-choice]");
+      if (item && target.closest("#font-menu")) {
+        A.setFont(item.getAttribute("data-font-choice"));
+        setFontMenuOpen(false);
+        /* Return focus to the button that owns the popover: dismissing a menu
+           must not strand keyboard focus on a row that is now hidden. */
+        var button = document.getElementById("font-btn");
+        if (button) button.focus();
+        return;
+      }
+
+      /* Clicking anywhere else closes it. Registered on the document rather than
+         with a backdrop so it composes with the search overlay, which uses the
+         same dismissal gesture. */
+      var openMenu = document.getElementById("font-menu");
+      if (openMenu && !openMenu.hidden && !openMenu.contains(target)) setFontMenuOpen(false);
+    });
+  }
+
+  /* ——— language choice ———
+     The masthead picker is the only thing that writes an explicit locale.
+     Selecting a language persists the tag and re-renders immediately; the theme
+     does not reload the page, because every string and every number on screen
+     is already reachable through A.t() — only the shell's own inline copy
+     needs re-reading, which V.renderShell() does.
+
+     "auto" is not a language: it clears the stored key so A.resolveLocale falls
+     back to 网站语言 (if the author set one) and then to navigator.languages. */
+  function setLangMenuOpen(open) {
+    var button = document.getElementById("lang-btn");
+    var menu = document.getElementById("lang-menu");
+    if (!button || !menu) return;
+    menu.hidden = !open;
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function chooseLocale(value) {
+    if (value === "auto") {
+      try { localStorage.removeItem("antiphon:lang"); } catch (error) {}
+      A.setLang(A.resolveLocale(A.state.blog ? A.state.blog["网站语言"] : null, null));
+    } else {
+      A.storeLocale(value);
+      A.setLang(value);
+    }
+    A.applyDomText();
+    applyCfg();
+    applyMetadata(A.state.blog);
+    A.views.renderShell();
+    updateModeButton(document.body.getAttribute("data-mode") === "night" ? "night" : "day");
+    updateLightButton(document.body.getAttribute("data-light") === "on");
+    if (A.views.renderFooter) A.views.renderFooter();
+    /* The current view is already in the DOM with its strings baked in, so re-run
+       the route rather than asking the reader to reload. Route state lives in the
+       URL, so renderRoute() reproduces exactly the view they were reading. */
+    if (A.renderRoute) A.renderRoute();
+  }
+
+  A.chooseLocale = chooseLocale;
+
+  function bindLangMenu() {
+    document.addEventListener("click", function (event) {
+      var target = event.target;
+      if (!target || !target.closest) return;
+
+      if (target.closest("#lang-btn")) {
+        var menu = document.getElementById("lang-menu");
+        if (menu) setLangMenuOpen(menu.hidden);
+        return;
+      }
+
+      var item = target.closest("[data-lang-choice]");
+      if (item && target.closest("#lang-menu")) {
+        chooseLocale(item.getAttribute("data-lang-choice"));
+        /* chooseLocale() re-renders the masthead, so the menu that was clicked
+           is already gone — the fresh one is rendered closed, and the button
+           that owns it is the live node to hand focus back to. */
+        var button = document.getElementById("lang-btn");
+        if (button) button.focus();
+        return;
+      }
+
+      var openMenu = document.getElementById("lang-menu");
+      if (openMenu && !openMenu.hidden && !openMenu.contains(target)) setLangMenuOpen(false);
+    });
+  }
+
+  var shellBound = false;
+
+  function bindShell() {
+    if (shellBound) return;
+    shellBound = true;
+    /* Every control bound here lives inside the masthead, which renderShell()
+       replaces wholesale, so the bindings delegate from the document and look
+       their node up by id per event. bindShell() itself stays idempotent anyway
+       — it also owns the document-level Escape handler and the search/viewer
+       plumbing, and a second call must not stack those. */
+    document.addEventListener("click", function (event) {
+      var target = event.target;
+      if (!target || !target.closest) return;
+      if (target.closest("#search-btn")) {
+        if (A.views.openSearch) A.views.openSearch();
+      } else if (target.closest("#mode-btn")) {
+        toggleMode();
+      } else if (target.closest("#light-btn")) {
+        toggleLight();
+      }
+    });
+    bindFontMenu();
+    bindLangMenu();
 
     document.addEventListener("keydown", function (event) {
       var key = event.key;
@@ -259,6 +529,20 @@ window.Antiphon = window.Antiphon || {};
         var viewer = document.getElementById("image-viewer");
         if (search && !search.hidden && A.views.closeSearch) A.views.closeSearch();
         if (viewer && !viewer.hidden) closeViewer();
+        /* Escape also dismisses the type popover and hands focus back to its
+           button, so the keyboard path matches the pointer one. */
+        var fontMenu = document.getElementById("font-menu");
+        if (fontMenu && !fontMenu.hidden) {
+          setFontMenuOpen(false);
+          var fontBtn = document.getElementById("font-btn");
+          if (fontBtn) fontBtn.focus();
+        }
+        var langMenu = document.getElementById("lang-menu");
+        if (langMenu && !langMenu.hidden) {
+          setLangMenuOpen(false);
+          var langBtn = document.getElementById("lang-btn");
+          if (langBtn) langBtn.focus();
+        }
         return;
       }
       if (key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
@@ -370,15 +654,27 @@ window.Antiphon = window.Antiphon || {};
       return;
     }
 
-    A.setLang(A.state.blog["网站语言"]);
+    /* Language resolution, in priority order: the visitor's stored choice, then
+       网站语言 when the author wrote something other than auto/blank, then
+       navigator.languages, then English. `auto` hands control back to the system,
+       which is the default and what an unset config means. resolveLocale owns
+       that whole chain, including the en fallback, so boot() must not second-
+       guess it. */
+    A.setLang(A.resolveLocale(A.state.blog["网站语言"]));
     /* A.setLang sets data-script too; asserted here so the token layer is resolved
        before applyCfg() and before the first view paints — no post-render jump. */
     A.setScript(A.lang);
     A.applyInterfaceText(A.state.blog);
+    /* The static shell in index.html carries English copy so it reads without
+       JS and so a crawler that does not run scripts sees the documented
+       fallback language; rewrite its placeholder and aria-label attributes
+       from the resolved pack before anything paints. */
+    A.applyDomText();
     window.blog = A.state.blog;
 
     applyCfg();
     applyMode();
+    applyFont(A.getFont());
     ensureVisitor();
     A.views.renderShell();
     bindShell();

@@ -6,10 +6,18 @@ window.Antiphon = window.Antiphon || {};
   var PUBLIC_APP_KEY = "0jowkR4ct0lJbWcvocymEkKw";
   var disqusLoaded = false;
 
+  /* The comment provider wants a plain code; A.lang is a BCP-47 tag, so this
+     reads the tag rather than comparing against the old language names — which
+     would have sent every non-English, non-Japanese visitor to "zh-CN".
+     zh-Hans/zh-Hant are CLDR-valid but the Chinese exchanges still expect the
+     region form, so only Chinese is remapped. Every other tag (pt, es, ru, ar,
+     …) is passed through unchanged: Valine and Waline both accept full BCP-47,
+     and narrowing fr-CA to fr would throw away information they can use. */
   function langCode() {
-    if (A.lang === "English") return "en";
-    if (A.lang === "日本語") return "ja";
-    return "zh-CN";
+    var tag = A.lang || "en";
+    if (tag.indexOf("zh-Hant") === 0) return "zh-TW";
+    if (tag.indexOf("zh") === 0) return "zh-CN";
+    return tag;
   }
 
   function pathFor(kind, filename) {
@@ -108,7 +116,7 @@ window.Antiphon = window.Antiphon || {};
             el: "#comments",
             server: server,
             url: path,
-            lang: "auto",
+            lang: langCode(),
             colorPattern: "#B08A46",
             darkMode: "auto"
           });

@@ -13,12 +13,108 @@ window.Antiphon = window.Antiphon || {};
       sun:
         '<circle cx="8" cy="8" r="3"/><path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1"/>',
       candle:
-        '<path d="M8 2.2c1.6 1.4 2.4 2.4 2.4 3.7a2.4 2.4 0 0 1-4.8 0c0-1.3.8-2.3 2.4-3.7Z"/><path d="M5 8.6h6v5.2H5z"/>'
+        '<path d="M8 2.2c1.6 1.4 2.4 2.4 2.4 3.7a2.4 2.4 0 0 1-4.8 0c0-1.3.8-2.3 2.4-3.7Z"/><path d="M5 8.6h6v5.2H5z"/>',
+      /* A capital A with a baseline rule underneath — the archetypal type
+         specimen mark, and legible at 16px where a serif/sans pair would not be. */
+      type:
+        '<path d="M4.2 12.4 8 3.6l3.8 8.8"/><path d="M5.9 9.4h4.2"/><path d="M2.6 13.6h10.8"/>',
+      /* A meridian globe: the conventional glyph for "interface language",
+         drawn to the same 16px hairline grid as the other icons. */
+      locale:
+        '<circle cx="8" cy="8" r="5.3"/><path d="M2.9 8h10.2"/><path d="M8 2.7c1.5 1.7 2.2 3.4 2.2 5.3S9.5 11.6 8 13.3M8 2.7C6.5 4.4 5.8 6.1 5.8 8s.7 3.6 2.2 5.3"/>'
     };
     return (
       '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="square" aria-hidden="true">' +
       (paths[name] || "") +
       "</svg>"
+    );
+  };
+
+  /* The type tab's popover. Rendered once into the masthead at shell paint so
+     the button's aria-controls has a real target; bindShell toggles `hidden`.
+     Every row carries its own sample line in its own face, which is the point of
+     a type chooser — the label alone would be a list of words. */
+  V.fontMenu = function () {
+    var current = A.getFont ? A.getFont() : "antiphon";
+    /* Preset names stay as they are: Humanist/Grotesk/Mono are the specimen
+       labels a type chooser would print, and translating them would name a
+       face that does not exist. The sample line is prose about the face, so it
+       is translated — set in the face it advertises, the sample is only useful
+       if the reader can read it. */
+    var rows = [
+      { id: "antiphon", label: "Antiphon", sample: A.t("FONT_SAMPLE_ANTIPHON") },
+      { id: "humanist", label: "Humanist", sample: A.t("FONT_SAMPLE_HUMANIST") },
+      { id: "grotesk", label: "Grotesk", sample: A.t("FONT_SAMPLE_GROTESK") },
+      { id: "mono", label: "Mono", sample: A.t("FONT_SAMPLE_MONO") }
+    ];
+    var items = rows
+      .map(function (row) {
+        var checked = row.id === current;
+        return (
+          '<button class="font-item" type="button" role="menuitemradio" data-font-choice="' + row.id +
+          '" aria-checked="' + (checked ? "true" : "false") + '">' +
+          '<span class="font-item-mark" aria-hidden="true">◆</span>' +
+          "<span>" +
+          '<span class="font-item-name">' + A.esc(row.label) + "</span>" +
+          '<span class="font-item-sample font-sample-' + row.id + '">' + A.esc(row.sample) + "</span>" +
+          "</span>" +
+          "</button>"
+        );
+      })
+      .join("");
+    return (
+      '<div id="font-menu" role="menu" aria-label="' + A.esc(A.t("FONT_LABEL")) + '" hidden>' +
+      '<span class="font-menu-label">' + A.esc(A.t("FONT_LABEL")) + "</span>" +
+      items +
+      "</div>"
+    );
+  };
+
+  /* The locale tab's popover, built from the registry in js/i18n.js so the
+     offered list and the resolvable list can never drift apart. Rows mirror the
+     type menu's markup and semantics (roled radiogroup, aria-checked), because
+     both are "pick one of N" popovers that sit in the same masthead cluster. */
+  V.langMenu = function () {
+    var current = A.lang;
+    var stored = A.readStoredLocale();
+    var auto = !stored || A.isAuto(stored);
+    /* The auto row reports what auto actually resolved to. "Follow system" on
+       its own is a promise the reader cannot check, and a visitor whose OS is
+       in a language they did not expect has no way to tell whether the theme
+       obeyed them or ignored them. The detected endonym appears as the row's
+       sample line; it is the same string the matching locale row shows. */
+    var detected = A.localeInfo(A.lang);
+    var rows = [
+      { id: "auto", label: A.t("LANG_AUTO"), hint: A.t("LANG_AUTO_NOW", { name: detected.endonym }) }
+    ].concat(
+      A.LOCALE_ORDER.map(function (tag) {
+        var info = A.LOCALES[tag];
+        return { id: tag, label: info.endonym, hint: info.code };
+      })
+    );
+    var items = rows
+      .map(function (row) {
+        var checked = row.id === "auto" ? auto : row.id === current;
+        return (
+          '<button class="font-item" type="button" role="menuitemradio" data-lang-choice="' + A.esc(row.id) +
+          '" aria-checked="' + (checked ? "true" : "false") +
+          '" lang="' + (row.id === "auto" ? A.localeInfo(A.lang).htmlLang : A.esc(row.id)) + '">' +
+          '<span class="font-item-mark" aria-hidden="true">◆</span>' +
+          "<span>" +
+          '<span class="font-item-name">' + A.esc(row.label) + "</span>" +
+          (row.hint
+            ? '<span class="font-item-sample">' + A.esc(row.hint) + "</span>"
+            : '<span class="font-item-sample">' + A.esc(A.t("LANG_LABEL")) + "</span>") +
+          "</span>" +
+          "</button>"
+        );
+      })
+      .join("");
+    return (
+      '<div id="lang-menu" class="font-menu" role="menu" aria-label="' + A.esc(A.t("LANG_LABEL")) + '" hidden>' +
+      '<span class="font-menu-label">' + A.esc(A.t("LANG_LABEL")) + "</span>" +
+      items +
+      "</div>"
     );
   };
 
@@ -46,7 +142,7 @@ window.Antiphon = window.Antiphon || {};
 
   V.panel = function (inner, meta) {
     meta = meta || {};
-    var classification = meta.classification || "INDEX";
+    var classification = meta.classification || A.t("CLASS_INDEX");
     var fileNo = meta.fileNo === undefined || meta.fileNo === null ? "—" : meta.fileNo;
     var leaf = meta.leaf === undefined || meta.leaf === null ? "" : meta.leaf;
     return (
@@ -56,7 +152,7 @@ window.Antiphon = window.Antiphon || {};
       '<span class="panel-edge panel-edge--right" aria-hidden="true"></span>' +
       '<div class="panel-status">' +
       '<span class="status-kind"><span class="led" aria-hidden="true"></span>' + A.esc(classification) + "</span>" +
-      "<span>FILE " + A.esc(fileNo) + "</span>" +
+      "<span>" + A.esc(A.t("FILE_LABEL")) + " " + A.esc(fileNo) + "</span>" +
       (leaf ? "<span>" + A.esc(leaf) + "</span>" : "") +
       "<span>" + A.esc(A.fmtDate(Date.now())) + "</span>" +
       "</div>" +
@@ -64,6 +160,19 @@ window.Antiphon = window.Antiphon || {};
       "</section>"
     );
   };
+
+  /* Section metadata is composed from fragments, and one of those fragments may
+     legitimately be empty: Arabic's singular for "one year" is the complete
+     phrase »سنة واحدة« and carries no {n} token, so the count can come back as
+     nothing at all. Joining with " · " would then leave an orphaned separator or
+     a doubled space. This drops empty fragments before joining and trims the
+     result, which keeps the rule independent of what each locale returns. */
+  function joinMeta(parts) {
+    return parts
+      .map(function (part) { return String(part == null ? "" : part).replace(/\s+/g, " ").trim(); })
+      .filter(Boolean)
+      .join(" · ");
+  }
 
   /* a ruled section head: LABEL ————— METADATA */
   V.secHead = function (label, meta) {
@@ -117,6 +226,19 @@ window.Antiphon = window.Antiphon || {};
     return items;
   };
 
+  /* The site's own name, with a language-neutral fallback.
+     The old fallback was the literal Chinese "对经", which leaked a Chinese
+     string into the masthead, the footer, the <title> and every untitled
+     page for readers in all ten other locales. The brand name is not a
+     translatable interface string (the theme cannot know what an author's
+     blog is called in German), so the fallback is the theme's own Latin name
+     rather than a translation — the same choice js/app.js makes for the
+     placeholder <title> and og:title. */
+  V.siteName = function () {
+    var blog = A.state.blog || {};
+    return String(blog["博客标题"] || "").trim() || "Antiphon";
+  };
+
   V.renderShell = function () {
     var blog = A.state.blog;
     var mode = document.body.getAttribute("data-mode") === "night" ? "night" : "day";
@@ -134,20 +256,35 @@ window.Antiphon = window.Antiphon || {};
     masthead.innerHTML =
       '<div class="masthead-top">' +
       '<p class="sys-line"><span class="led" aria-hidden="true"></span>' +
-      '<strong>OBSERVATION ACTIVE</strong>' +
-      '<span class="protocol">PROTOCOL 20261001</span></p>' +
+      "<strong>" + A.esc(A.t("SYS_STATUS")) + "</strong>" +
+      '<span class="protocol">' + A.esc(A.t("SYS_PROTOCOL")) + "</span></p>" +
       '<div class="masthead-actions">' +
       '<button class="icon-btn" id="search-btn" type="button" aria-label="' + A.esc(A.t("SEARCH")) + '">' + V.icon("search") + "</button>" +
       '<button class="icon-btn" id="mode-btn" type="button" aria-label="' + A.esc(A.t(mode === "day" ? "THEME_NIGHT" : "THEME_DAY")) + '">' + V.icon(mode === "day" ? "moon" : "sun") + "</button>" +
       (A.state.cfg && A.state.cfg["窗光"] && A.state.cfg["窗光"]["启用"] !== false
         ? '<button class="icon-btn" id="light-btn" type="button" aria-label="' + A.esc(A.t("LIGHT_ON")) + '">' + V.icon("candle") + "</button>"
         : "") +
+      /* The type tab. aria-expanded/aria-controls are set here so the popover
+         below is a labelled region from the first paint; bindShell only flips
+         the state. It sits outside the action buttons' own order but inside the
+         same flex cluster, so it stays visually last. */
+      '<button class="icon-btn" id="font-btn" type="button" aria-label="' + A.esc(A.t("FONT_LABEL")) +
+      '" aria-expanded="false" aria-controls="font-menu">' + V.icon("type") + "</button>" +
+      /* The language tab. Same popover contract as the type tab above: the
+         button owns aria-expanded, the menu is its aria-controls target, and
+         bindShell flips the state. It is rendered from the locale registry, so
+         a locale added there appears here without further markup. */
+      '<button class="icon-btn" id="lang-btn" type="button" aria-label="' + A.esc(A.t("LANG_LABEL")) +
+      '" aria-expanded="false" aria-controls="lang-menu" lang="' + A.esc(A.localeInfo(A.lang).htmlLang) +
+      '">' + V.icon("locale") + "</button>" +
+      V.fontMenu() +
+      V.langMenu() +
       "</div>" +
       "</div>" +
       '<div class="masthead-brand">' +
       '<div>' +
       '<h1 class="blog-title"><a href="./index.html?type=internal&function=article_list" data-internal data-nav-key="home">' +
-      A.esc(blog["博客标题"] || "对经") +
+      A.esc(blog["博客标题"] || V.siteName()) +
       "</a></h1>" +
       (blog["博客描述（副标题）"]
         ? '<p class="blog-subtitle">' + A.esc(blog["博客描述（副标题）"]) + "</p>"
@@ -159,8 +296,8 @@ window.Antiphon = window.Antiphon || {};
       "<span>SECTIO " + A.roman(A.state.visible.length || 1) + "</span>" +
       "</div>" +
       "</div>" +
-      '<nav class="masthead-nav" aria-label="主导航">' + nav +
-      '<span class="nav-tail" aria-hidden="true">ANTIPHON / 对经</span>' +
+      '<nav class="masthead-nav" aria-label="' + A.esc(A.t("NAV_LABEL")) + '">' + nav +
+      '<span class="nav-tail" aria-hidden="true">ANTIPHON</span>' +
       "</nav>";
 
     V.renderFooter();
@@ -173,8 +310,13 @@ window.Antiphon = window.Antiphon || {};
     if (note) return note;
     var license = String(blog["全站内容授权协议"] || "").trim();
     if (!license) return "";
-    if (license === "reserved") return "保留所有权利（All rights reserved）";
-    if (license === "unlicensed") return "未授权（Unlicensed）";
+    /* The two preset values used to render a bilingual parenthetical that was
+       Chinese in both cases, so an English or Arabic visitor read a licence
+       notice in a language they had not chosen. They are interface strings, not
+       authored content, so they come from the pack now; a real licence id is
+       passed through untouched because "CC BY-NC-SA 4.0" is a proper name. */
+    if (license === "reserved") return A.t("LICENSE_RESERVED");
+    if (license === "unlicensed") return A.t("LICENSE_UNLICENSED");
     if (license === "cc-by-nc-sa-4.0") return "CC BY-NC-SA 4.0";
     return license;
   };
@@ -196,22 +338,22 @@ window.Antiphon = window.Antiphon || {};
     }
     var atom =
       String(blog["网站域名（包括https://）"] || "").trim() !== ""
-        ? '<p class="footer-brand"><a href="./atom.xml">ATOM FEED</a></p>'
+        ? '<p class="footer-brand"><a href="./atom.xml">' + A.esc(A.t("ATOM_FEED")) + "</a></p>"
         : "";
     var showVisitor = A.getCfg("外观.显示访客编号", true) !== false;
     var count = (A.state.visible || []).length;
     footer.innerHTML =
       '<div class="footer-inner">' +
       '<div class="footer-grid">' +
-      '<p class="footer-brand footer-colophon">' + V.sigil(13) + "<span>COLOPHON · END OF FILE</span></p>" +
+      '<p class="footer-brand footer-colophon">' + V.sigil(13) + "<span>" + A.esc(A.t("COLOPHON")) + "</span></p>" +
       '<p class="footer-license">© ' + year + " " + A.esc(blog["博客标题"] || "") + (license ? " · " + A.esc(license) : "") + "</p>" +
       '<p class="footer-brand">ANNO ' + A.roman(year) + "</p>" +
-      (showVisitor && A.visitor ? '<p class="visitor">VISITOR 0x' + A.esc(A.visitor) + "</p>" : "") +
-      '<p class="footer-brand">由 BBG 与 Antiphon 主题生成</p>' +
+      (showVisitor && A.visitor ? '<p class="visitor">' + A.esc(A.t("VISITOR", { id: A.visitor })) + "</p>" : "") +
+      '<p class="footer-brand">' + A.esc(A.t("FOOTER_CREDIT")) + "</p>" +
       atom +
       (bottomHtml ? '<div class="footer-bottom prose">' + bottomHtml + "</div>" : "") +
       '<p class="log-line">' +
-      "<span>FOLIA " + A.roman(count) + " (" + A.esc(count) + ")</span>" +
+      "<span>FOLIA " + A.roman(count) + " (" + A.esc(A.num(count)) + ")</span>" +
       "<span>SYS " + A.esc((A.app && A.app.appliedMode && A.app.appliedMode()) === "night" ? "NOCT" : "DIURN") + "</span>" +
       "<span>LUX " + A.esc(bodyLightLabel()) + "</span>" +
       "<span>MMXXVI · ANTIPHON</span>" +
@@ -242,11 +384,11 @@ window.Antiphon = window.Antiphon || {};
   V.showLoading = function () {
     var main = document.getElementById("main");
     main.innerHTML =
-      '<div id="loading">' +
+      '<div id="loading" role="status" aria-live="polite" aria-label="' + A.esc(A.t("LOADING")) + '">' +
       '<svg class="loading-sigil" viewBox="0 0 80 80" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1">' +
       '<circle cx="40" cy="40" r="34" opacity=".18" vector-effect="non-scaling-stroke"/><circle cx="40" cy="40" r="26" opacity=".3" vector-effect="non-scaling-stroke"/>' +
       '<circle cx="40" cy="40" r="18" opacity=".5" vector-effect="non-scaling-stroke"/><circle cx="40" cy="40" r="3" fill="currentColor" stroke="none"/></svg>' +
-      "<p>SYS BOOT</p></div>";
+      "<p>" + A.esc(A.t("SYS_BOOT")) + "</p></div>";
   };
 
   V.showError = function (reason) {
@@ -256,7 +398,7 @@ window.Antiphon = window.Antiphon || {};
         '<p class="not-found-code">!</p>' +
         '<p class="not-found-text">' + A.esc(A.t("LOAD_ERROR")) + "</p>" +
         '<p class="not-found-text">' + A.esc(reason || "") + "</p>" +
-        '<p class="not-found-text">请通过 BBG 预览，或在站点根目录（与 data/ 同级）访问本主题。</p>' +
+        '<p class="not-found-text">' + A.esc(A.t("LOAD_ERROR_HINT")) + "</p>" +
       "</div>"
     );
   };
@@ -350,16 +492,16 @@ window.Antiphon = window.Antiphon || {};
       '<div class="lead-body">' +
       '<p class="lead-kicker">' +
       '<span class="lead-flag">' + A.esc(A.t("PINNED")) + "</span>" +
-      "<span>FEATURED FILE</span>" +
+      "<span>" + A.esc(A.t("FEATURED_FILE")) + "</span>" +
       '<span class="sep" aria-hidden="true">·</span>' +
-      "<span>" + A.esc(date.year) + "." + A.esc(date.monthday) + "</span>" +
+      "<span>" + A.esc(date.full) + "</span>" +
       "</p>" +
       '<h2 class="lead-title"><a data-internal href="./index.html?type=article&amp;filename=' +
       encodeURIComponent(article.filename) + '">' + A.esc(article.title) + "</a></h2>" +
       (article.excerpt ? '<p class="lead-dek">' + A.esc(article.excerpt) + "</p>" : "") +
       '<div class="lead-foot">' +
       (article.tags.length ? '<span class="entry-tags">' + V.tagLinks(article.tags) + "</span>" : "") +
-      '<span class="lead-read">ACCEDE TO FILE →</span>' +
+      '<span class="lead-read">' + A.esc(A.t("ACCEDE")) + " " + A.arrow("forward") + "</span>" +
       "</div>" +
       "</div></article>"
     );
@@ -370,7 +512,7 @@ window.Antiphon = window.Antiphon || {};
     var entryNo = String(article.index + 1).padStart(3, "0");
     return (
       '<article class="entry">' +
-      '<div class="entry-no">NO. ' + A.esc(entryNo) + "</div>" +
+      '<div class="entry-no">' + A.esc(A.t("ENTRY_NO", { n: entryNo })) + "</div>" +
       '<div class="entry-body">' +
       '<h2 class="entry-title"><a data-internal href="./index.html?type=article&amp;filename=' +
       encodeURIComponent(article.filename) + '">' + A.esc(article.title) + "</a>" +
@@ -381,8 +523,8 @@ window.Antiphon = window.Antiphon || {};
         : "") +
       '<div class="entry-foot">' +
       (article.tags.length ? '<span class="entry-tags">' + V.tagLinks(article.tags) + "</span>" : "") +
-      (article.encrypted ? '<span class="sep" aria-hidden="true">·</span><span>SEALED</span>' : "") +
-      (article.comments ? '<span class="sep" aria-hidden="true">·</span><span>DISCUSSION OPEN</span>' : "") +
+      (article.encrypted ? '<span class="sep" aria-hidden="true">·</span><span>' + A.esc(A.t("SEALED")) + "</span>" : "") +
+      (article.comments ? '<span class="sep" aria-hidden="true">·</span><span>' + A.esc(A.t("DISCUSSION_OPEN")) + "</span>" : "") +
       "</div>" +
       "</div>" +
       '<div class="entry-side"><span class="side-year">' + A.esc(date.year) + "</span><br>" +
@@ -392,16 +534,23 @@ window.Antiphon = window.Antiphon || {};
   };
 
   V.pagination = function (page, totalPages) {
+    /* Arrows are text, not icons: in RTL the browser mirrors "→" to point at
+       the leading edge of the reading direction, but an explicit U+2192 in the
+       markup does not get that treatment. Emitting the bidi-safe pair keeps
+       "previous" pointing backwards and "next" pointing forwards in both
+       directions without a second stylesheet. */
+    var arrowBack = A.arrow("back");
+    var arrowForward = A.arrow("forward");
     var prev =
       page > 1
-        ? '<a class="page-link" data-internal href="./index.html?type=internal&amp;function=article_list&amp;page=' + (page - 1) + '">← ' + A.esc(A.t("PAGE_PREV")) + "</a>"
-        : '<span class="page-link is-disabled">← ' + A.esc(A.t("PAGE_PREV")) + "</span>";
+        ? '<a class="page-link" data-internal href="./index.html?type=internal&amp;function=article_list&amp;page=' + (page - 1) + '">' + arrowBack + " " + A.esc(A.t("PAGE_PREV")) + "</a>"
+        : '<span class="page-link is-disabled">' + arrowBack + " " + A.esc(A.t("PAGE_PREV")) + "</span>";
     var next =
       page < totalPages
-        ? '<a class="page-link" data-internal href="./index.html?type=internal&amp;function=article_list&amp;page=' + (page + 1) + '">' + A.esc(A.t("PAGE_NEXT")) + " →</a>"
-        : '<span class="page-link is-disabled">' + A.esc(A.t("PAGE_NEXT")) + " →</span>";
+        ? '<a class="page-link" data-internal href="./index.html?type=internal&amp;function=article_list&amp;page=' + (page + 1) + '">' + A.esc(A.t("PAGE_NEXT")) + " " + arrowForward + "</a>"
+        : '<span class="page-link is-disabled">' + A.esc(A.t("PAGE_NEXT")) + " " + arrowForward + "</span>";
     return (
-      '<nav class="pagination" aria-label="分页">' +
+      '<nav class="pagination" aria-label="' + A.esc(A.t("PAGINATION_LABEL")) + '">' +
       prev +
       '<span class="page-count">' + A.roman(page) + " / " + A.roman(totalPages) + "</span>" +
       next +
@@ -439,7 +588,7 @@ window.Antiphon = window.Antiphon || {};
       range = A.fmtDate(oldest.created) + " → " + A.fmtDate(newest.created);
     }
     var head = V.secHead(
-      "INDEX · 目录",
+      A.t("HEAD_INDEX"),
       "FOLIA " + A.roman(list.length) + " / " + A.roman(totalPages) + (range ? " · " + range : "")
     );
     var body =
@@ -454,7 +603,7 @@ window.Antiphon = window.Antiphon || {};
       (totalPages > 1 ? V.pagination(current, totalPages) : "") +
       "</section>";
 
-    return { title: "", html: V.panel(body, { classification: "INDEX", fileNo: "—", leaf: "FOLIA " + A.roman(items.length) }) };
+    return { title: "", html: V.panel(body, { classification: A.t("CLASS_INDEX"), fileNo: "—", leaf: "FOLIA " + A.roman(items.length) }) };
   };
 
   V.articleCatalog = function (article, minutes, encrypted, sectionCount) {
@@ -465,28 +614,31 @@ window.Antiphon = window.Antiphon || {};
         '<span class="catalog-val' + (signal ? " is-signal" : "") + '">' + A.esc(value) + "</span></div>"
       );
     }
-    cell("RECORDED", A.fmtDate(article.created));
+    cell(A.t("CAT_RECORDED"), A.fmtDate(article.created));
     if (article.modified && article.modified - article.created > 86400000) {
-      cell("REVISED", A.fmtDate(article.modified));
+      cell(A.t("REVISED"), A.fmtDate(article.modified));
     }
-    if (!encrypted) cell("EXTENT", minutes + " MIN");
-    if (sectionCount > 0) cell("SECTIONS", String(sectionCount).padStart(2, "0"));
-    if (article.tags.length) cell("RUBRIC", article.tags.join(" · "), true);
+    if (!encrypted) cell(A.t("CAT_EXTENT"), A.num(minutes) + " " + A.t("MINUTES"));
+    if (sectionCount > 0) cell(A.t("CAT_SECTIONS"), A.num(sectionCount, 2));
+    if (article.tags.length) cell(A.t("RUBRIC"), article.tags.join(" · "), true);
     if (!cells.length) return "";
     return '<div class="article-catalog">' + cells.join("") + "</div>";
   };
 
+  /* The read-time line. Dates already live in the catalog card above, so this
+     carries only the one fact the catalog cannot: how long the piece takes.
+     阅读.显示阅读时长 (true by default) hides it for owners who would rather
+     not claim a number, and an encrypted article has no readable body to time. */
   V.articleMeta = function (article, minutes, encrypted) {
-    var parts = ["<span>RECORDED " + A.esc(A.fmtDate(article.created)) + "</span>"];
-    if (article.modified && article.modified - article.created > 86400000) {
-      parts.push('<span class="dot">·</span>');
-      parts.push("<span>REVISED " + A.esc(A.fmtDate(article.modified)) + "</span>");
-    }
-    if (!encrypted) {
-      parts.push('<span class="dot">·</span>');
-      parts.push("<span>READ " + A.esc(minutes) + " MIN</span>");
-    }
-    return '<div class="article-meta">' + parts.join("") + "</div>";
+    if (encrypted) return "";
+    if (A.getCfg("阅读.显示阅读时长", true) === false) return "";
+    var count = Number(minutes);
+    if (!isFinite(count) || count <= 0) return "";
+    return (
+      '<div class="article-meta">' +
+      "<span>" + A.esc(A.t("READ_TIME", { n: A.num(count) })) + "</span>" +
+      "</div>"
+    );
   };
 
   V.licenseBlock = function () {
@@ -535,7 +687,7 @@ window.Antiphon = window.Antiphon || {};
       );
     }
     return (
-      '<nav class="prevnext" aria-label="文章导航">' +
+      '<nav class="prevnext" aria-label="' + A.esc(A.t("ARTICLE_NAV_LABEL")) + '">' +
       item(A.t("PREV"), around.prev, "prevnext-item--prev") +
       item(A.t("NEXT"), around.next, "prevnext-item--next") +
       "</nav>"
@@ -583,9 +735,12 @@ window.Antiphon = window.Antiphon || {};
     if (headings.length < 3) return;
     var aside = document.createElement("aside");
     aside.className = "marginalia";
+    /* The visible heading is the archive's house word for a margin note, but
+       the region's accessible name should say what it is: a table of contents. */
+    aside.setAttribute("aria-label", A.t("TOC"));
     var title = document.createElement("h2");
     title.className = "marginalia-title";
-    title.textContent = "MARGINALIA";
+    title.textContent = A.t("MARGINALIA");
     aside.appendChild(title);
     headings.forEach(function (heading) {
       var link = document.createElement("a");
@@ -676,13 +831,14 @@ window.Antiphon = window.Antiphon || {};
       "<article>" +
       announcement +
       '<header class="article-header">' +
-      (A.getCfg("外观.档案标记", true) !== false ? '<span class="stamp">CLASSIFIED</span>' : "") +
-      '<div class="article-kicker"><span class="file-no">FILE NO. ' + A.esc(fileNo) + "</span>" +
-      (article.tags.length ? V.tagLinks(article.tags) : '<span class="kicker-sub">UNFILED</span>') +
+      (A.getCfg("外观.档案标记", true) !== false ? '<span class="stamp">' + A.esc(A.t("CLASSIFIED")) + "</span>" : "") +
+      '<div class="article-kicker"><span class="file-no">' + A.esc(A.t("FILE_NO", { n: fileNo })) + "</span>" +
+      (article.tags.length ? V.tagLinks(article.tags) : '<span class="kicker-sub">' + A.esc(A.t("UNFILED")) + "</span>") +
       "</div>" +
       '<h1 class="article-title">' + A.esc(article.title) + "</h1>" +
       (article.excerpt ? '<p class="article-dek">' + A.esc(article.excerpt) + "</p>" : "") +
       V.articleCatalog(article, minutes, article.encrypted, sectionCount) +
+      V.articleMeta(article, minutes, article.encrypted) +
       V.ornament() +
       "</header>" +
       bodyHtml +
@@ -694,7 +850,7 @@ window.Antiphon = window.Antiphon || {};
 
     return {
       title: article.title,
-      html: '<div class="article-layout">' + V.panel(inner, { classification: "CLASSIFIED", fileNo: fileNo }) + "</div>",
+      html: '<div class="article-layout">' + V.panel(inner, { classification: A.t("CLASSIFIED"), fileNo: fileNo }) + "</div>",
       after: async function (main) {
         if (article.encrypted) {
           V.bindPassword(main, article, raw, baseurl);
@@ -727,7 +883,7 @@ window.Antiphon = window.Antiphon || {};
         html: V.panel(
           '<div class="not-found"><p class="not-found-text">' + A.esc(page.title) + "</p>" +
           '<a class="not-found-link" href="' + A.esc(target) + '">' + A.esc(A.t("NAV_ARTICLES")) + "</a></div>",
-          { classification: "RECORD", fileNo: pageNo }
+          { classification: A.t("CLASS_RECORD"), fileNo: pageNo }
         ),
         after: function () { window.location.href = target; }
       };
@@ -748,8 +904,8 @@ window.Antiphon = window.Antiphon || {};
       "<article>" +
       announcement +
       '<header class="article-header">' +
-      '<div class="article-kicker"><span class="file-no">RECORD ' + A.esc(pageNo) + "</span>" +
-      '<span class="kicker-sub">STANDING PAGE</span></div>' +
+      '<div class="article-kicker"><span class="file-no">' + A.esc(A.t("FILE_RECORD", { n: pageNo })) + "</span>" +
+      '<span class="kicker-sub">' + A.esc(A.t("STANDING_PAGE")) + "</span></div>" +
       '<h1 class="article-title">' + A.esc(page.title) + "</h1>" +
       V.ornament() +
       "</header>" +
@@ -761,7 +917,7 @@ window.Antiphon = window.Antiphon || {};
 
     return {
       title: page.title,
-      html: V.panel(inner, { classification: "RECORD", fileNo: pageNo }),
+      html: V.panel(inner, { classification: A.t("CLASS_RECORD"), fileNo: pageNo }),
       after: async function (main) {
         var prose = main.querySelector("#page-prose");
         if (prose) await A.markdown.postProcess(prose);
@@ -778,6 +934,7 @@ window.Antiphon = window.Antiphon || {};
     var groups = [];
     var currentYear = null;
     var currentGroup = null;
+    var archiveIndex = 0;
     list.forEach(function (article) {
       var year = article.created ? new Date(article.created).getFullYear() : "—";
       if (!currentGroup || currentGroup.year !== year) {
@@ -803,8 +960,14 @@ window.Antiphon = window.Antiphon || {};
             var rows = month.items
               .map(function (article) {
                 var parts = A.dateParts(article.created);
+                /* The reveal ladder is driven by this counter rather than by
+                   :nth-child: each month's rows follow a year header and a
+                   month header, so no row is ever the first child of
+                   .archive-block. Counting across the whole page keeps the
+                   ladder monotonic instead of restarting per month. */
+                var index = archiveIndex++;
                 return (
-                  '<div class="archive-row">' +
+                  '<div class="archive-row" style="--i:' + index + '">' +
                   '<span class="archive-date">' + A.esc(parts.monthday) + "</span>" +
                   '<span class="archive-title"><a data-internal href="./index.html?type=article&amp;filename=' +
                   encodeURIComponent(article.filename) + '">' + A.esc(article.title) + "</a></span>" +
@@ -812,7 +975,7 @@ window.Antiphon = window.Antiphon || {};
                 );
               })
               .join("");
-            var monthLabel = month.month === "—" ? "—" : String(month.month).padStart(2, "0");
+            var monthLabel = month.month === "—" ? "—" : A.monthName(month.month);
             return '<div class="archive-month">' + monthLabel + "</div>" + rows;
           })
           .join("");
@@ -843,14 +1006,17 @@ window.Antiphon = window.Antiphon || {};
 
     var inner =
       '<section class="archive-block">' +
-      V.secHead("ARCHIVUM · 归档", "FOLIA " + A.roman(list.length) + " · " + A.roman(groups.length) + " ANNI") +
+      V.secHead(A.t("HEAD_ARCHIVE"), joinMeta([
+        A.plural("ARCHIVE_YEARS", groups.length, { n: A.num(groups.length) }),
+        "FOLIA " + A.roman(list.length)
+      ])) +
       (archiveHtml || '<p class="search-empty">' + A.esc(A.t("EMPTY")) + "</p>") +
       '<div class="tag-index">' +
-      V.secHead("RUBRICAE · 标签", A.roman(tags.length) + " SUBJECTS") +
+      V.secHead(A.t("HEAD_TAGS"), A.plural("TAG_SUBJECTS", tags.length, { n: A.num(tags.length) })) +
       '<div class="tag-index-list">' + tagHtml + "</div></div>" +
       "</section>";
 
-    return { title: A.t("NAV_ARCHIVE"), html: V.panel(inner, { classification: "ARCHIVE", fileNo: "—", leaf: "RUBRICAE" }) };
+    return { title: A.t("NAV_ARCHIVE"), html: V.panel(inner, { classification: A.t("CLASS_ARCHIVE"), fileNo: "—", leaf: A.t("RUBRIC") }) };
   };
 
   V.tag = function (tagName) {
@@ -861,12 +1027,12 @@ window.Antiphon = window.Antiphon || {};
     var rows = list.map(V.entryRow).join("");
     var inner =
       '<section class="home">' +
-      V.secHead("RUBRIC · 主题", "FOLIA " + A.roman(list.length)) +
+      V.secHead(A.t("HEAD_TOPIC"), "FOLIA " + A.roman(list.length)) +
       '<h1 class="article-title">' + A.esc(tag) + "</h1>" +
       V.ornament() +
       '<div class="entry-list">' + (rows || '<p class="search-empty">' + A.esc(A.t("EMPTY")) + "</p>") + "</div>" +
       "</section>";
-    return { title: A.t("TAG_TITLE", { tag: tag }), html: V.panel(inner, { classification: "RUBRIC", fileNo: "—", leaf: tag }) };
+    return { title: A.t("TAG_TITLE", { tag: tag }), html: V.panel(inner, { classification: A.t("RUBRIC"), fileNo: "—", leaf: tag }) };
   };
 
   V.friends = async function () {
@@ -885,7 +1051,7 @@ window.Antiphon = window.Antiphon || {};
     }
 
     var cards = entries
-      .map(function (friend) {
+      .map(function (friend, index) {
         if (!friend) return "";
         var name = String(friend["名称"] || "");
         var url = String(friend["链接"] || "");
@@ -897,7 +1063,9 @@ window.Antiphon = window.Antiphon || {};
             '<span class="friend-icon friend-icon--empty" style="display:none">' + A.esc(initial) + "</span>"
           : '<span class="friend-icon friend-icon--empty">' + A.esc(initial) + "</span>";
         return (
-          '<div class="friend">' +
+          /* --i feeds the same 40ms reveal ladder the archive rows use, so the
+             two listing views move at one rhythm. */
+          '<div class="friend" style="--i:' + index + '">' +
           iconHtml +
           '<div class="friend-body"><a class="friend-name" href="' + A.esc(url) + '" target="_blank" rel="noopener">' +
           A.esc(name) + '</a><p class="friend-desc">' + A.esc(description) + "</p></div>" +
@@ -919,7 +1087,7 @@ window.Antiphon = window.Antiphon || {};
 
     var inner =
       '<section class="friends-block">' +
-      V.secHead("AFFILIATES · 友人帐", entries.length ? A.roman(entries.length) + " NOMINA" : "") +
+      V.secHead(A.t("NAV_FRIENDS"), entries.length ? A.plural("TAG_SUBJECTS", entries.length, { n: A.num(entries.length) }) : "") +
       '<h1 class="article-title">' + A.esc(A.t("NAV_FRIENDS")) + "</h1>" +
       V.ornament() +
       '<div class="friends">' + (cards || '<p class="search-empty">' + A.esc(A.t("EMPTY")) + "</p>") + "</div>" +
@@ -929,7 +1097,7 @@ window.Antiphon = window.Antiphon || {};
 
     return {
       title: A.t("NAV_FRIENDS"),
-      html: V.panel(inner, { classification: "AFFILIATES", fileNo: "—", leaf: A.roman(entries.length) + " NOMINA" }),
+      html: V.panel(inner, { classification: A.t("CLASS_AFFILIATES"), fileNo: "—", leaf: A.plural("TAG_SUBJECTS", entries.length, { n: A.num(entries.length) }) }),
       after: function (main) {
         if (blog["友人帐页面允许评论"] === true && A.comments && A.comments.mount) {
           A.comments.mount(main, { kind: "page", filename: "friendbook", title: A.t("NAV_FRIENDS") });
@@ -944,11 +1112,11 @@ window.Antiphon = window.Antiphon || {};
       html: V.panel(
         '<div class="not-found">' +
         '<p class="not-found-code">404</p>' +
-        '<p class="not-found-text">RECORD NOT FOUND</p>' +
+        '<p class="not-found-text">' + A.esc(A.t("RECORD_NOT_FOUND")) + "</p>" +
         '<p class="not-found-text"><small>' + A.esc(A.t("NOT_FOUND")) + "</small></p>" +
         '<a class="not-found-link" data-internal href="./index.html?type=internal&amp;function=article_list">' +
-        "RETURN TO INDEX</a></div>",
-        { classification: "MISSING", fileNo: "—" }
+        A.esc(A.t("RETURN_TO_INDEX")) + "</a></div>",
+        { classification: A.t("CLASS_MISSING"), fileNo: "—" }
       )
     };
   };
@@ -987,8 +1155,8 @@ window.Antiphon = window.Antiphon || {};
         var resultNo = String((article.index || 0) + 1).padStart(3, "0");
         return (
           '<a class="search-result" data-search-result href="./index.html?type=article&amp;filename=' +
-          encodeURIComponent(article.filename) + '"><h3 class="search-result-title"><span class="result-no">NO. ' +
-          A.esc(resultNo) + "</span>" + A.esc(article.title) +
+          encodeURIComponent(article.filename) + '"><h3 class="search-result-title"><span class="result-no">' +
+          A.esc(A.t("ENTRY_NO", { n: resultNo })) + "</span>" + A.esc(article.title) +
           '</h3><p class="search-result-excerpt">' + A.esc(article.excerpt) + "</p></a>"
         );
       })

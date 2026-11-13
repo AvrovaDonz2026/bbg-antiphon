@@ -67,8 +67,43 @@
     <li><code>显示阅读时长</code>：<code>true</code>/<code>false</code>，文章头显示“约 N 分钟”。</li>
   </ul>
 
+  <h2>界面语言（<code>网站语言</code>）</h2>
+  <p>本主题自带 11 套界面文本：<code>zh-Hans</code>（简体中文）、<code>zh-Hant</code>（繁體中文）、<code>ja</code>（日本語）、<code>en</code>（English）、<code>ko</code>（한국어）、<code>pt</code>（Português）、<code>es</code>（Español）、<code>fr</code>（Français）、<code>de</code>（Deutsch）、<code>ru</code>（Русский）、<code>ar</code>（العربية，从右到左）。同一套注册表同时决定界面文字、<code>&lt;html lang&gt;</code>、文字方向与排版标度，因此新增语言不会出现“文字换了但版心没换”的错位。</p>
+  <p><code>网站语言</code> 接受三类写法，大小写与下划线不敏感（<code>zh_CN</code>、<code>ZH-CN</code> 等价）：</p>
+  <table>
+    <thead><tr><th>写法</th><th>示例</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>标准 BCP-47 标签</td><td><code>zh-Hans</code>、<code>pt-BR</code>、<code>de-AT</code></td><td>最长前缀匹配；<code>pt-BR</code> → <code>pt</code>，<code>de-AT</code> → <code>de</code>。</td></tr>
+      <tr><td>BBG 旧版语言名</td><td><code>简体中文</code>、<code>繁體中文</code>、<code>日本語</code>、<code>English</code>、<code>한국어</code>、<code>Русский</code>、<code>العربية</code></td><td>经别名表映射到对应标签，旧站点无需改动。</td></tr>
+      <tr><td>英文语言名与短码</td><td><code>chinese</code>、<code>japanese</code>、<code>english</code>、<code>zh</code>、<code>jp</code>、<code>chs</code>、<code>cht</code></td><td>同样走别名表；<code>zh-HK</code>/<code>zh-TW</code>/<code>zh-MO</code> 归为 <code>zh-Hant</code>。</td></tr>
+      <tr><td><code>auto</code> / 留空</td><td><code>auto</code>、<code>自动</code>、<code>跟随系统</code>、空字符串</td><td>交给浏览器：依次尝试 <code>navigator.languages</code>、<code>navigator.language</code>。</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p><strong>无法确定时为 English：</strong>当语言完全无法判定（标签无法识别、<code>localStorage</code> 损坏、<code>auto</code> 且浏览器语言不在支持列表内），主题显示英文 <code>en</code>，而不是中文。完整回退链为：<code>localStorage['antiphon:lang']</code>（非 <code>auto</code>）→ <code>网站语言</code>（非空且非 <code>auto</code>）→ 浏览器语言 → <code>en</code>。字符串级别同理：当前语言包 → （仅繁体中文时）简体中文包 → <code>en</code> → 原始键名。除繁体中文外，任何语言缺失字符串都不会回退到中文。</p>
+  </div>
+  <p>读者可在右上角地球图标中自行切换；选择写入 <code>localStorage['antiphon:lang']</code> 并优先于 <code>网站语言</code>，选“跟随系统”会清除该键。<code>auto</code> 那一行会附带显示当前实际解析到的语言，便于确认自动结果。日期、月份与数字均按解析到的语言用 <code>Intl</code> 格式化（<code>zh-Hans</code>/<code>zh-Hant</code> 由浏览器原生 CLDR 数据区分，无需再映射到 <code>zh-CN</code>/<code>zh-TW</code>）。</p>
+  <p>评论组件会把解析到的标签传给 Valine / Waline / Rustaline / Disqus；仅中文会被改写成 <code>zh-CN</code> 或 <code>zh-TW</code>，其余标签原样传递。</p>
+
+  <h2>字体预设（<code>字体</code>）</h2>
+  <p>右上角“字体”图标提供四套预设，选择存入 <code>localStorage['antiphon:font']</code>，与界面语言相互独立。每套预设只替换拉丁字面，CJK、谚文与阿拉伯文的回退字族始终保留，因此不会出现中文掉字。</p>
+  <table>
+    <thead><tr><th>预设</th><th>id</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>Antiphon</td><td><code>antiphon</code></td><td>默认。Newsreader 衬线正文配宋体，主题原本的“档案纸”声音。</td></tr>
+      <tr><td>Humanist</td><td><code>humanist</code></td><td>更温润的书版字面，适合长文阅读。</td></tr>
+      <tr><td>Grotesk</td><td><code>grotesk</code></td><td>无衬线报告体，界面文字更接近实验记录。</td></tr>
+      <tr><td>Mono</td><td><code>mono</code></td><td>全站等宽，正文也使用终端字面。</td></tr>
+    </tbody>
+  </table>
+
+  <h2>未在 <code>themecfg.json</code> 中暴露的站点设置键</h2>
+  <p>以下键由本站设置或文章元数据提供，不在主题配置文件中；此处列出以便排查：<code>网站语言</code>、<code>博客标题</code>、<code>博客描述（副标题）</code>、<code>网站域名（包括https://）</code>、<code>启用网站公告</code> / <code>网站公告</code> / <code>网站公告仅在首页显示</code>、<code>启用内建友人帐页面</code>、<code>在菜单中添加归档和标签的入口</code>、<code>全局评论设置</code>、<code>自定义界面文本</code>、<code>静态资源</code>、<code>插件列表</code>。</p>
+  <p>反之，<code>themecfg.json</code> 中的键全部有效；<code>外观.档案标记</code> 与 <code>外观.显示访客编号</code> 虽未写入默认文件，但代码识别，填入即可覆盖默认值（分别为 <code>true</code>）。</p>
+
   <h2>可覆盖的界面文本键</h2>
-  <p>在站点设置“自定义界面文本”中启用并添加 <code>key/value</code>，可覆盖：<code>NAV_ARTICLES</code>、<code>NAV_ARCHIVE</code>、<code>NAV_FRIENDS</code>、<code>SEARCH</code>、<code>SEARCH_PLACEHOLDER</code>、<code>NO_RESULTS</code>、<code>PINNED</code>、<code>PAGE_PREV</code>、<code>PAGE_NEXT</code>、<code>READ_TIME</code>、<code>REVISED</code>、<code>PREV</code>、<code>NEXT</code>、<code>REFERENCES</code>、<code>INFO</code>、<code>WARNING</code>、<code>DANGER</code>、<code>SUCCESS</code>、<code>COMMENTS</code>、<code>COMMENTS_UNAVAILABLE</code>、<code>COMMENTS_LOAD_FAILED</code>、<code>COMMENTS_PREVIEW</code>、<code>LICENSE</code>、<code>DOWNLOAD</code>、<code>COPY</code>、<code>COPY_CODE</code>、<code>COPIED</code>、<code>SHARE</code>、<code>LINK_COPIED</code>、<code>NOT_FOUND</code>、<code>PASSWORD_PROMPT</code>、<code>PASSWORD_SUBMIT</code>、<code>PASSWORD_WRONG</code>、<code>LIGHT_ON</code>、<code>LIGHT_OFF</code>、<code>THEME_DAY</code>、<code>THEME_NIGHT</code>、<code>TOC</code>、<code>BACK_TO_TOP</code>、<code>ANNOUNCEMENT</code>、<code>LOADING</code>、<code>LOAD_ERROR</code>、<code>MINUTES</code>、<code>EMPTY</code>、<code>TAG_TITLE</code>、<code>CLOSE</code>。</p>
+  <p>在站点设置“自定义界面文本”中启用并添加 <code>key/value</code>，可覆盖：<code>NAV_ARTICLES</code>、<code>NAV_ARCHIVE</code>、<code>NAV_FRIENDS</code>、<code>SEARCH</code>、<code>SEARCH_PLACEHOLDER</code>、<code>NO_RESULTS</code>、<code>PINNED</code>、<code>PAGE_PREV</code>、<code>PAGE_NEXT</code>、<code>READ_TIME</code>、<code>REVISED</code>、<code>PREV</code>、<code>NEXT</code>、<code>REFERENCES</code>、<code>INFO</code>、<code>WARNING</code>、<code>DANGER</code>、<code>SUCCESS</code>、<code>COMMENTS</code>、<code>COMMENTS_UNAVAILABLE</code>、<code>COMMENTS_LOAD_FAILED</code>、<code>COMMENTS_PREVIEW</code>、<code>LICENSE</code>、<code>DOWNLOAD</code>、<code>COPY</code>、<code>COPY_CODE</code>、<code>COPIED</code>、<code>SHARE</code>、<code>LINK_COPIED</code>、<code>NOT_FOUND</code>、<code>PASSWORD_PROMPT</code>、<code>PASSWORD_SUBMIT</code>、<code>PASSWORD_WRONG</code>、<code>LIGHT_ON</code>、<code>LIGHT_OFF</code>、<code>THEME_DAY</code>、<code>THEME_NIGHT</code>、<code>TOC</code>、<code>BACK_TO_TOP</code>、<code>ANNOUNCEMENT</code>、<code>LOADING</code>、<code>LOAD_ERROR</code>、<code>MINUTES</code>、<code>EMPTY</code>、<code>TAG_TITLE</code>、<code>CLOSE</code>、<code>LANG_LABEL</code>、<code>LANG_AUTO</code>、<code>LANG_AUTO_NOW</code>、<code>FONT_LABEL</code>、<code>NAV_LABEL</code>、<code>PAGINATION_LABEL</code>、<code>ARTICLE_NAV_LABEL</code>、<code>SKIP_TO_CONTENT</code>、<code>HEAD_INDEX</code>、<code>HEAD_ARCHIVE</code>、<code>HEAD_TAGS</code>、<code>HEAD_TOPIC</code>、<code>FOOTER_CREDIT</code>、<code>SYS_STATUS</code>、<code>SYS_PROTOCOL</code>、<code>SYS_BOOT</code>、<code>FEATURED_FILE</code>、<code>ACCEDE</code>、<code>SEALED</code>、<code>DISCUSSION_OPEN</code>、<code>CLASSIFIED</code>、<code>UNFILED</code>、<code>STANDING_PAGE</code>、<code>FILE_LABEL</code>、<code>FILE_NO</code>、<code>FILE_RECORD</code>、<code>ENTRY_NO</code>、<code>CAT_RECORDED</code>、<code>CAT_EXTENT</code>、<code>CAT_SECTIONS</code>、<code>RUBRIC</code>、<code>MARGINALIA</code>、<code>RECORD_NOT_FOUND</code>、<code>RETURN_TO_INDEX</code>、<code>SEARCH_EYEBROW</code>、<code>VISITOR</code>、<code>ATOM_FEED</code>、<code>COLOPHON</code>、<code>READ_META</code>、<code>CLASS_INDEX</code>、<code>CLASS_ARCHIVE</code>、<code>CLASS_RECORD</code>、<code>CLASS_AFFILIATES</code>、<code>CLASS_MISSING</code>、<code>ARCHIVE_YEARS</code>、<code>TAG_SUBJECTS</code>、<code>FONT_SAMPLE_ANTIPHON</code>、<code>FONT_SAMPLE_HUMANIST</code>、<code>FONT_SAMPLE_GROTESK</code>、<code>FONT_SAMPLE_MONO</code>。</p>
+  <p>带占位符的键必须保留花括号，否则替换会失败：<code>READ_TIME</code>/<code>READ_META</code> 用 <code>{n}</code>，<code>TAG_TITLE</code> 用 <code>{tag}</code>，<code>FILE_NO</code>/<code>FILE_RECORD</code>/<code>ENTRY_NO</code> 用 <code>{n}</code>，<code>VISITOR</code> 用 <code>{id}</code>，<code>LANG_AUTO_NOW</code> 用 <code>{name}</code>，<code>ARCHIVE_YEARS</code>/<code>TAG_SUBJECTS</code> 用 <code>{n}</code>。</p>
 
   <div class="orn">❦</div>
   <p class="sub">Antiphon · 对经 · BBG v2 · 兼容 BBG 20261001</p>

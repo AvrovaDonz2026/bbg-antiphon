@@ -73,7 +73,7 @@ a:hover {
 
 .skip {
   position: absolute;
-  left: 1rem;
+  inset-inline-start: 1rem;
   top: -100%;
   z-index: 100;
   padding: 0.6rem 1rem;
@@ -214,7 +214,7 @@ body:not([data-script]):lang(ja) .prose h4 {
 
 .prose p {
   margin: 0;
-  text-align: left;
+  text-align: start;
 }
 
 /* Paragraph air is a per-language token (--para-gap): 1.3em for Chinese, 1.35em
@@ -234,7 +234,7 @@ body:not([data-script]):lang(ja) .prose h4 {
   color: var(--ink);
   line-height: 1.28;
   margin: 0;
-  text-align: left;
+  text-align: start;
 }
 
 .prose h2 {
@@ -264,7 +264,7 @@ body:not([data-script]):lang(ja) .prose h4 {
 
 .prose h3::before {
   content: "—";
-  margin-right: 0.45em;
+  margin-inline-end: 0.45em;
   color: var(--signal);
   font-weight: 400;
 }
@@ -292,7 +292,7 @@ body:not([data-script]):lang(ja) .prose h4 {
 .prose blockquote {
   margin: 2em 0;
   padding: 0.9rem 1.4rem 0.95rem;
-  border-left: 2px solid var(--signal);
+  border-inline-start: 2px solid var(--signal);
   background: var(--panel-2);
   color: var(--ink-2);
   font-size: 1.03rem;
@@ -300,7 +300,7 @@ body:not([data-script]):lang(ja) .prose h4 {
 }
 
 .prose blockquote p {
-  text-align: left;
+  text-align: start;
   text-justify: none;
 }
 
@@ -354,7 +354,7 @@ body:not([data-script]):lang(ja) .prose h4 {
   content: "";
   position: absolute;
   top: 0.85rem;
-  left: 1.1rem;
+  inset-inline-start: 1.1rem;
   width: 2.4rem;
   height: 1px;
   background: var(--signal);
@@ -373,7 +373,7 @@ body:not([data-script]):lang(ja) .prose h4 {
 .code-copy {
   position: absolute;
   top: 0.62rem;
-  right: 0.7rem;
+  inset-inline-end: 0.7rem;
   font-family: var(--font-mono);
   font-size: var(--text-micro);
   letter-spacing: 0.16em;
@@ -399,7 +399,7 @@ body:not([data-script]):lang(ja) .prose h4 {
 }
 
 .prose table thead th {
-  text-align: left;
+  text-align: start;
   font-family: var(--font-mono);
   font-size: var(--text-micro);
   letter-spacing: 0.16em;
@@ -420,12 +420,12 @@ body:not([data-script]):lang(ja) .prose h4 {
 .prose ul,
 .prose ol {
   margin: 1.3em 0;
-  padding-left: 1.35em;
+  padding-inline-start: 1.35em;
 }
 
 .prose li {
   margin: 0.5em 0;
-  text-align: left;
+  text-align: start;
 }
 
 .prose li::marker {
@@ -450,7 +450,7 @@ body:not([data-script]):lang(ja) .prose h4 {
 
 .prose figcaption {
   margin-top: 0.6rem;
-  text-align: left;
+  text-align: start;
   font-family: var(--font-mono);
   font-size: var(--text-micro);
   letter-spacing: 0.1em;
@@ -553,10 +553,10 @@ body:not([data-script]):lang(ja) .prose h4 {
   margin: 1.9em 0;
   padding: 0.9rem 1.1rem 1rem;
   background: var(--panel-2);
-  border-left: 3px solid var(--rule-2);
+  border-inline-start: 3px solid var(--rule-2);
   font-size: 0.93rem;
   line-height: 1.78;
-  text-align: left;
+  text-align: start;
 }
 
 .prose .hint-heading {
@@ -573,22 +573,26 @@ body:not([data-script]):lang(ja) .prose h4 {
 .prose success-hint .hint-heading { color: var(--success); }
 .prose danger-hint .hint-heading { color: var(--danger); }
 
-.prose info-hint { border-left-color: var(--info); }
-.prose warning-hint { border-left-color: var(--signal); }
-.prose success-hint { border-left-color: var(--success); }
-.prose danger-hint { border-left-color: var(--danger); }
+.prose info-hint { border-inline-start-color: var(--info); }
+.prose warning-hint { border-inline-start-color: var(--signal); }
+.prose success-hint { border-inline-start-color: var(--success); }
+.prose danger-hint { border-inline-start-color: var(--danger); }
 
 /* ——— drop cap: CJK only ———
    Latin openings get a small-caps first line instead (see the rule below),
    because a 3em Songti initial in English reads like a magazine parody. */
 
 .dropcap {
-  float: left;
+  /* The initial is floated into the opening line, so the float and the optical
+     margin both have to follow the inline direction — otherwise an Arabic or
+     Hebrew drop cap hangs away from the text it belongs to. */
+  float: inline-start;
   font-family: var(--font-cjk);
   font-size: var(--script-dropcap, 3em);
   line-height: 0.84;
   color: var(--ink);
-  margin: 0.1em 0.1em 0 0;
+  margin-block: 0.1em 0;
+  margin-inline: 0 0.1em;
   font-weight: 500;
   font-style: normal;
 }
@@ -606,13 +610,160 @@ body:not([data-script]):lang(en) #page-prose > p:first-of-type::first-line {
 }
 
 body[data-script="latin"] .prose .dropcap,
-body:not([data-script]):lang(en) .prose .dropcap {
+body:not([data-script]):lang(en) .prose .dropcap,
+body[data-script="cyrillic"] .prose .dropcap,
+body:not([data-script]):lang(ru) .prose .dropcap,
+body[data-script="arabic"] .prose .dropcap,
+body:not([data-script]):lang(ar) .prose .dropcap,
+body[data-script="ko"] .prose .dropcap {
   float: none;
   font-size: inherit;
   line-height: inherit;
   margin: 0;
   color: inherit;
   font-family: inherit;
+}
+
+/* Cyrillic opens like Latin: the all-small-caps line is the Latin device that
+   suits a cased alphabet, and Russian has real small capitals to render it. */
+
+body[data-script="cyrillic"] #article-prose > p:first-of-type::first-line,
+body[data-script="cyrillic"] #page-prose > p:first-of-type::first-line,
+body:not([data-script]):lang(ru) #article-prose > p:first-of-type::first-line,
+body:not([data-script]):lang(ru) #page-prose > p:first-of-type::first-line {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.02em;
+}
+
+/* Arabic and Korean open plainly. Arabic is a unicase joined script, so neither
+   a 3em initial nor a small-caps first line exists as a readable treatment; Hangul
+   has no case at all, and a magnified syllable reads as a typo rather than an
+   initial. Both keep the first paragraph flush with the rest of the column. */
+
+body[data-script="arabic"] #article-prose > p:first-of-type::first-line,
+body[data-script="arabic"] #page-prose > p:first-of-type::first-line,
+body[data-script="ko"] #article-prose > p:first-of-type::first-line,
+body[data-script="ko"] #page-prose > p:first-of-type::first-line {
+  font-variant-caps: normal;
+  letter-spacing: 0;
+}
+
+/* Traditional Chinese keeps the CJK drop cap — ideographs take an initial the
+   same way Simplified does — but the glyph must come from the TC stack, which
+   the hant token block already swaps in. */
+
+body[data-script="hant"] .dropcap,
+body:not([data-script]):lang(zh-Hant) .dropcap {
+  font-family: var(--font-cjk);
+}
+
+/* Korean prose needs the script's own line-breaking: Hangul syllables may break
+   between jamo blocks, but a break inside a word still looks wrong, so `keep-all`
+   is the right default for the body copy and the browser handles the phrase
+   spacing that follows. */
+
+body[data-script="ko"] .prose p,
+body:not([data-script]):lang(ko) .prose p {
+  text-wrap: wrap;
+  hyphens: none;
+  -webkit-hyphens: none;
+  word-break: keep-all;
+  line-break: strict;
+  overflow-wrap: anywhere;
+  /* Korean sets its punctuation full-width like CJK, so the same trimming rule
+     applies at the line edge; nothing extra is needed at Latin boundaries. */
+  text-spacing-trim: normal;
+}
+
+/* Arabic: no hyphenation (Arabic does not hyphenate), no letter-spacing (it
+   breaks the cursive joins), and `text-autospace: no-autospace` because that
+   property only exists to space CJK against Latin. */
+
+body[data-script="arabic"] .prose,
+body:not([data-script]):lang(ar) .prose {
+  text-autospace: no-autospace;
+  letter-spacing: 0;
+}
+
+body[data-script="arabic"] .prose p,
+body:not([data-script]):lang(ar) .prose p {
+  hyphens: none;
+  -webkit-hyphens: none;
+  text-align: start;
+  word-break: normal;
+  line-break: auto;
+}
+
+/* Mixed Arabic-and-Latin runs in the margin furniture — the status strip,
+   the archive dates, the section meta, the visitor id — are Arabic sentences
+   with Latin islands in them. Their word order is the bidi order a reader
+   expects, so they inherit the page's RTL base and only need isolating; the
+   rule below explains why `direction: ltr` must not be added back. */
+body[dir="rtl"] .panel-status,
+body[dir="rtl"] .article-kicker,
+body[dir="rtl"] .article-catalog,
+body[dir="rtl"] .entry-no,
+body[dir="rtl"] .entry-side,
+body[dir="rtl"] .archive-date,
+body[dir="rtl"] .archive-year-arabic,
+body[dir="rtl"] .sec-head-meta,
+body[dir="rtl"] .result-no,
+body[dir="rtl"] .footer-brand,
+body[dir="rtl"] .visitor {
+  unicode-bidi: isolate;
+}
+
+/* The footer readout is the one exception: it is pure Latin — "FOLIA VII (7)",
+   "SYS DIURN", "MMXXVI · ANTIPHON" — and it is meant to look like a machine
+   log, so it keeps a literal left-to-right base in every locale. Every other
+   element in the list above carries a localized string, and an ltr base
+   silently reorders those: Arabic reads "نوفمبر 08", not "08 نوفمبر", and
+   "سنة واحدة" comes out as "واحدة سنة". Forcing ltr also turns the elements'
+   inline padding and border properties physical, which is how the article
+   stamp came to overlap its file number instead of sitting in the kicker's
+   reserved gutter. */
+body[dir="rtl"] .log-line {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* The two masthead rows are deliberately absent from the list above. They are
+   the only flex rows in the theme whose trailing item is positioned with
+   `margin-inline-start: auto` (.protocol, .nav-tail), and `margin-inline-*`
+   resolves against the element's OWN direction: forcing ltr on the row would
+   turn that logical margin into a physical one and park the item mid-row under
+   RTL — which is exactly the bug this comment prevents from coming back.
+
+   The leaf runs are isolated instead, and they deliberately do NOT take
+   `direction: ltr`: both carry localized sentences (»البروتوكول 20261001«,
+   »الرصد جارٍ«) whose own bidi resolution is already correct, and changing the
+   leaf's direction would re-resolve the auto margin that positions it.
+   `unicode-bidi: isolate` alone keeps the run from re-ordering the adjacent
+   punctuation, which is all these two need. */
+body[dir="rtl"] .sys-line strong,
+body[dir="rtl"] .sys-line .protocol,
+body[dir="rtl"] .nav-tail {
+  unicode-bidi: isolate;
+}
+
+/* Code, URLs and keyboard-ish strings in prose always run left to right, even
+   inside the Arabic body. `unicode-bidi: plaintext` would let the first strong
+   character decide, which is exactly the coin-flip this needs to avoid. */
+body[dir="rtl"] .prose code,
+body[dir="rtl"] .prose pre,
+body[dir="rtl"] .prose kbd,
+body[dir="rtl"] .prose samp,
+body[dir="rtl"] .prose a[href^="http"] {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: start;
+}
+
+/* The stamp hangs off the prose column's end edge; in RTL that is the left
+   side, which is also where the archive mark reads, so it must not inherit a
+   mirrored inset that pushes it over the title. */
+body[dir="rtl"] .stamp {
+  inset-inline-end: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

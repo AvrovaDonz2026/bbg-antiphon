@@ -9,7 +9,7 @@ window.Antiphon = window.Antiphon || {};
     articles: [],
     pages: [],
     visible: [],
-    lang: "简体中文",
+    lang: "en",
     markedPromise: null,
     scriptPromises: {},
     stylePromises: {}
@@ -269,9 +269,118 @@ window.Antiphon = window.Antiphon || {};
       .replace(/'/g, "&#39;");
   };
 
+  /* Date and number formatting follow the resolved locale, not a fixed zh/en
+     pattern. The old formatter printed "2026.11.13" for every visitor, which is
+     an unambiguous but foreign convention in most of the locales the theme
+     ships; Intl gives each one its own order and month name.
+     `Intl` accepts the theme's BCP-47 tags directly (verified in Chrome: zh-Hans
+     and zh-Hant both resolve to their own CLDR data rather than collapsing to
+     zh), so no tag remapping is needed. A missing or partial Intl — old WebViews
+     and a few embedded browser shells — falls back to the previous numeric
+     pattern rather than throwing inside a render. */
+  var tagCache = null;
+  var tagCacheSource = null;
+
+  /* The BCP-47 tag handed to Intl. `A.lang` is already a tag Intl accepts
+     (verified against this Chrome and Node's ICU: zh-Hans and zh-Hant reach
+     their own CLDR data, and neither collapses to the other), so the only job
+     here is to normalise the value and memoise it per language. Exposed as a
+     public helper because pluralisation and any future formatter must agree
+     with the formatters below on which tag is in force. */
+  function intlTag() {
+    var lang = (A && A.lang) || "en";
+    if (lang !== tagCacheSource) {
+      tagCacheSource = lang;
+      tagCache = (A && A.tagOrFallback ? A.tagOrFallback(lang) : lang);
+    }
+    return tagCache;
+  }
+
+  A.intlTag = intlTag;
+
+  function formatter(Ctor, options) {
+    if (typeof Intl === "undefined" || typeof Intl[Ctor] !== "function") return null;
+    try {
+      return new Intl[Ctor](intlTag(), options);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /* Singular vs base-form selection for counted nouns.
+     The packs store one form per key ("{n} years", "{n} subjects"), which reads
+     correctly for every count except one — "1 years" is wrong in English,
+     German, French, Spanish and Portuguese, and Arabic. `<key>_ONE` carries the
+     singular; when a pack has no singular variant the base form is used, which
+     is correct for Chinese, Japanese and Korean because those languages do not
+     inflect nouns for number at all.
+     INVARIANT: the {n} token is optional in a singular. Arabic's natural form
+     for "one year" is »سنة واحدة« — a complete phrase with no numeral, because
+     Arabic does not append the count to a singular noun the way the other packs
+     do. Callers must therefore never assume a number is present in the result:
+     compose around the string, do not concatenate a bare separator onto it
+     (see joinMeta above) and never try to read the digit back out of it.
+     Only the CLDR "one" category is distinguished. Russian and Arabic have
+     additional categories (few/many) that would each need their own key; the
+     visible defect is the "1 <plural>" case, and adding six forms per noun is
+     a translation burden this pass deliberately does not take on. */
+  A.plural = function (key, count, replace) {
+    var n = Number(count);
+    /* Resolve the pack the same way A.t does, which means falling through to en
+       when A.lang names something we do not ship. Selecting the singular out of
+       an empty pack would otherwise drop through to the base key and print the
+       plural for a count of one — "1 years" — which is exactly the defect this
+       helper exists to remove. */
+    var lang = A.lang;
+    if (!A.I18N[lang]) lang = A.tagOrFallback ? A.tagOrFallback(lang) : "en";
+    if (!A.I18N[lang]) lang = "en";
+    var pluralRule = null;
+    if (typeof Intl !== "undefined" && typeof Intl.PluralRules === "function") {
+      try {
+        pluralRule = new Intl.PluralRules(A.tagOrFallback ? A.tagOrFallback(lang) : lang);
+      } catch (error) {
+        pluralRule = null;
+      }
+    }
+    var singular = pluralRule ? pluralRule.select(n) === "one" : n === 1;
+    var pack = A.I18N[lang] || {};
+    var candidate = singular ? key + "_ONE" : key;
+    if (pack[candidate] === undefined && A.overrides[candidate] === undefined) {
+      candidate = key;
+    }
+    return A.t(candidate, replace);
+  };
+
+  A.num = function (value, pad) {
+    var number = Number(value);
+    if (!isFinite(number)) return "—";
+    var text;
+    var format = formatter("NumberFormat", { maximumFractionDigits: 0 });
+    try {
+      text = format ? format.format(number) : String(Math.round(number));
+    } catch (error) {
+      text = String(Math.round(number));
+    }
+    /* The ledger's fixed-width columns (file numbers, entry numbers) are a
+       typographic device, not a locale preference, so zero-padding is applied
+       after locale grouping and only when the caller asks for it. */
+    if (pad) {
+      var plain = Math.round(number).toString();
+      while (plain.length < pad) plain = "0" + plain;
+      text = plain;
+    }
+    return text;
+  };
+
   A.fmtDate = function (ms) {
     if (!ms || !isFinite(ms)) return "—";
     var date = new Date(ms);
+    var format = formatter("DateTimeFormat", { year: "numeric", month: "long", day: "numeric" });
+    if (format) {
+      try {
+        return format.format(date);
+      } catch (error) {}
+    }
     return (
       date.getFullYear() +
       "." +
@@ -281,14 +390,53 @@ window.Antiphon = window.Antiphon || {};
     );
   };
 
-  A.dateParts = function (ms) {
+  /* Compact column date for the ledger and archive rows, where the full
+     "13 November 2026" would break the fixed-width grid. Month name plus day
+     keeps the locale's own month vocabulary without the year, which the row
+     already carries in its own column. */
+  A.fmtDateShort = function (ms) {
     if (!ms || !isFinite(ms)) return { year: "—", monthday: "—", full: "—" };
     var date = new Date(ms);
-    return {
-      year: String(date.getFullYear()),
-      monthday: String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getDate()).padStart(2, "0"),
-      full: A.fmtDate(ms)
-    };
+    var full = A.fmtDate(ms);
+    var short = formatter("DateTimeFormat", { month: "short", day: "2-digit" });
+    var monthday;
+    try {
+      monthday = short ? short.format(date) : String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getDate()).padStart(2, "0");
+    } catch (error) {
+      monthday = String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getDate()).padStart(2, "0");
+    }
+    return { year: String(date.getFullYear()), monthday: monthday, full: full };
+  };
+
+  A.dateParts = function (ms) {
+    return A.fmtDateShort(ms);
+  };
+
+  /* Month heading in the archive. Built from a fixed reference year so leap
+     years and time zones cannot shift the month; only the name is used. */
+  A.monthName = function (month) {
+    var index = Number(month);
+    if (!isFinite(index) || index < 1 || index > 12) return "—";
+    var format = formatter("DateTimeFormat", { month: "long" });
+    if (format) {
+      try {
+        return format.format(new Date(2020, index - 1, 15));
+      } catch (error) {}
+    }
+    return String(index).padStart(2, "0");
+  };
+
+  /* Direction-aware arrow glyphs. HTML's U+2192 is not mirrored by the bidi
+     algorithm, so in Arabic "next" would still point right — away from the
+     direction the text actually advances. Picking the glyph from the resolved
+     locale keeps the chrome honest without a second stylesheet. */
+  A.arrow = function (which) {
+    var rtl = false;
+    try {
+      rtl = A.localeInfo(A.lang).dir === "rtl";
+    } catch (error) {}
+    if (which === "back") return rtl ? "→" : "←";
+    return rtl ? "←" : "→";
   };
 
   A.roman = function (number) {
