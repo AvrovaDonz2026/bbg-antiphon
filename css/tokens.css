@@ -1,0 +1,225 @@
+/* Antiphon v2 · The Institute — design tokens
+   warm paper, near-black ink, clay signal. no radius, no gloss. */
+
+:root {
+  /* day: archive paper (Anthropic-warm) */
+  --wall: #EDEAE0;
+  --wall-2: #E5E1D4;
+  --on-wall: #15140F;
+  --on-wall-muted: #6D6759;
+  --wall-rule: #D4CDBB;
+
+  --panel: #F8F6EF;
+  --panel-2: #EEEAE0;
+  --panel-3: #F2EFE5;
+
+  --ink: #15140F;
+  --ink-2: #3D3931;
+  --muted: #726C5E;
+
+  --rule: #DAD3C2;
+  --rule-2: #C4BBA6;
+
+  --signal: #C2663C;
+  --signal-led: #D97757;
+  --seal: #9C3A24;
+  --rubric: #9C3A24;
+  --link: #A54A2A;
+
+  --code-bg: #EAE5D8;
+  --code-ink: #2D2921;
+
+  --success: #5F6B54;
+  --warn: #A2673A;
+  --danger: #9C3A24;
+  --info: #565F6A;
+
+  --grid-dot: rgba(21, 20, 15, 0.06);
+  --veil: rgba(21, 20, 15, 0.72);
+
+  /* lateral feathering: the sheet dissolves into the desk instead of being cut */
+  --edge-veil: rgba(237, 234, 224, 0.9);
+
+  /* type · per-script stacks
+     Latin faces are listed first so Latin glyphs always take Newsreader;
+     CJK glyphs fall through to the Song face. Both scripts keep one stack,
+     which is what makes mixed paragraphs (中文 quoting English) behave. */
+
+  --font-ui-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+
+  --font-latin: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-cjk: "Songti SC", "Songti TC", "Noto Serif SC", "Source Han Serif SC", "Source Han Serif CN", STSong, serif;
+  --font-serif: var(--font-latin), var(--font-cjk), serif;
+
+  /* display: same faces, opt into fuller optical sizes for headlines */
+  --font-display: var(--font-latin), var(--font-cjk), serif;
+
+  --font-ui: var(--font-ui-sans);
+
+  --font-mono-latin: ui-monospace, "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace;
+  --font-mono-cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", monospace;
+  --font-mono: var(--font-mono-latin), var(--font-mono-cjk), monospace;
+
+  --text-base: 17px;
+  --text-body: 1.0625rem;
+  --leading-body: 1.82;
+  --para-gap: 1.3em;
+  --script-dropcap: 3em;
+  --script-title-tracking: 0.02em;
+  --script-h2-tracking: -0.008em;
+  --text-small: 0.75rem;
+  --text-micro: 0.6875rem;
+  --tracking-label: 0.2em;
+  --text-entry: 1.5rem;
+  --text-h2: clamp(1.55rem, 2.4vw, 1.95rem);
+  --text-h3: 1.18rem;
+  --text-display: clamp(2.2rem, 5vw, 3.3rem);
+  --text-article-title: clamp(1.9rem, 4vw, 2.85rem);
+  --text-lede: clamp(1.15rem, 1.8vw, 1.4rem);
+
+  /* layout */
+  --measure: 40rem;
+  --panel-max: 64rem;
+  --gutter: 1.6rem;
+  --radius: 0;
+  --shadow-panel: 0 40px 80px -70px rgba(21, 20, 15, 0.5);
+
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4rem;
+  --s9: 6rem;
+
+  --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --dur: 190ms;
+  --dur-slow: 420ms;
+
+  --hairline: 1px solid var(--rule);
+
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.62'/%3E%3C/svg%3E");
+}
+
+body[data-mode="night"] {
+  /* night shift */
+  --wall: #121110;
+  --wall-2: #1B1916;
+  --on-wall: #EDE8DB;
+  --on-wall-muted: #A39B89;
+  --wall-rule: #332E27;
+
+  --panel: #191715;
+  --panel-2: #211E1A;
+  --panel-3: #1D1A17;
+
+  --ink: #EDE8DB;
+  --ink-2: #C9C0AC;
+  --muted: #A39B89;
+
+  --rule: #35312A;
+  --rule-2: #4C4639;
+
+  --signal: #D97757;
+  --signal-led: #E08C6B;
+  --seal: #D97757;
+  --rubric: #D97757;
+  --link: #E08C6B;
+
+  --code-bg: #0D0C0B;
+  --code-ink: #EDE8DB;
+
+  --success: #93AE9C;
+  --warn: #D9A06E;
+  --danger: #C97A6A;
+  --info: #A9B4C0;
+
+  --grid-dot: rgba(237, 232, 220, 0.055);
+  --veil: rgba(8, 8, 7, 0.78);
+
+  --edge-veil: rgba(18, 17, 16, 0.92);
+
+  --shadow-panel: 0 40px 80px -60px rgba(0, 0, 0, 0.9);
+}
+
+body[data-mode="day"] {
+  color-scheme: light;
+}
+
+body[data-mode="night"] {
+  color-scheme: dark;
+}
+
+/* ——— per-language type scale ———
+   Three languages, three rhythms. `data-script` is set on <body> from the BBG site
+   language (js/i18n.js A.setLang, called in js/app.js boot() before the first
+   view paints), so there is no reflow after render. The `:lang()` selectors are
+   a safety net: if the attribute is ever missing, the document language still
+   picks the right block.
+
+   `--measure` lives here so each language gets its own column. applyCfg() writes an
+   inline --measure on <body> only when 外观.版心宽度（rem） is positive or the 更窄
+   switch is on, and removes it otherwise so these per-language defaults govern. An
+   inline declaration wins over these rules in every language. */
+
+body[data-script="cjk"],
+body:not([data-script]):lang(zh) {
+  --leading-body: 1.82;
+  --measure: 40rem;
+  --text-body: 1.0625rem;
+  --para-gap: 1.3em;
+  --script-dropcap: 3em;
+  --script-title-tracking: 0.02em;
+  --script-h2-tracking: -0.008em;
+  --text-article-title: clamp(1.9rem, 4vw, 2.85rem);
+  --text-h2: clamp(1.55rem, 2.4vw, 1.95rem);
+}
+
+/* Japanese runs longest in the fewest columns, so it takes the loosest leading,
+   the shortest measure, and one step down in display sizes. It also gets its own
+   CJK stack: Songti's kana are Chinese-drawn, so Japanese leads with a Mincho. */
+
+body[data-script="ja"],
+body:not([data-script]):lang(ja) {
+  --font-cjk: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP",
+    "Source Han Serif JP", "Songti SC", serif;
+  --font-serif: var(--font-latin), var(--font-cjk), serif;
+  --font-display: var(--font-latin), var(--font-cjk), serif;
+  --font-mono-cjk: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
+    "PingFang SC", monospace;
+  --font-mono: var(--font-mono-latin), var(--font-mono-cjk), monospace;
+  --leading-body: 1.9;
+  --measure: 38rem;
+  --text-body: 1.0625rem;
+  --para-gap: 1.35em;
+  --script-dropcap: 3em;
+  --script-title-tracking: 0.015em;
+  --script-h2-tracking: -0.004em;
+  --text-article-title: clamp(1.72rem, 3.5vw, 2.5rem);
+  --text-h2: clamp(1.45rem, 2.2vw, 1.8rem);
+  --text-display: clamp(2rem, 4.6vw, 3rem);
+  --text-entry: 1.42rem;
+}
+
+/* English: 1.62 leading and a ~34rem measure land on the 62–70 character line
+   the eye prefers. Headlines are set optically tight; body tracking goes to 0
+   so the label tracking on the institutional chrome never leaks into prose. */
+
+body[data-script="latin"],
+body:not([data-script]):lang(en) {
+  --leading-body: 1.62;
+  --measure: 34rem;
+  --text-body: 1.0625rem;
+  --para-gap: 1.15em;
+  --text-h2: clamp(1.5rem, 2.2vw, 1.85rem);
+  --text-h3: 1.16rem;
+  --text-entry: 1.42rem;
+  --text-display: clamp(2.3rem, 5.2vw, 3.5rem);
+  --text-article-title: clamp(1.95rem, 4.2vw, 3rem);
+  --text-lede: clamp(1.18rem, 1.9vw, 1.45rem);
+  --script-dropcap: 2.6em;
+  --script-title-tracking: -0.02em;
+  --script-h2-tracking: -0.01em;
+}
