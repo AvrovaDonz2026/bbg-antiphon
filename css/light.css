@@ -40,10 +40,12 @@ body[data-light="fallback"] #light-canvas {
 
 body[data-mode="night"] #light-fallback {
   opacity: 0.8;
+  /* on a black desk the 3px scanline would read as a screen, so at night it
+     drops to 0.02 and behaves like grain in the emulsion instead */
   background-image:
     radial-gradient(circle at 50% 50%, rgba(224, 140, 107, 0.32) 0 1px, transparent 1.5px),
-    repeating-linear-gradient(0deg, rgba(237, 232, 220, 0.045) 0 1px, transparent 1px 3px),
-    radial-gradient(ellipse at 50% 46%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.44) 100%);
+    repeating-linear-gradient(0deg, rgba(242, 237, 227, 0.02) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 46%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.5) 100%);
 }
 
 body[data-light="fallback"] #light-fallback {

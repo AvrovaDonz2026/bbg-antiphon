@@ -326,6 +326,12 @@ body:not([data-script]):lang(ja) .prose h4 {
   border: 1px solid var(--rule);
   border-radius: 0;
   white-space: pre-wrap;
+  /* `text-autospace` inherits from .prose, and code must render exactly as
+     authored: the ¼em CJK/Latin air would shift the monospace grid around
+     mixed ASCII + 中文 lines, and text-spacing-trim would bite full-width
+     punctuation inside a string literal. */
+  text-autospace: no-autospace;
+  text-spacing-trim: space-all;
 }
 
 /* code blocks get an address line, like a filed sample */

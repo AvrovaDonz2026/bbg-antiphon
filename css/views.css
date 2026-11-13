@@ -83,12 +83,27 @@
 
 /* ——— announcement + verse ——— */
 
+/* announcement: same sheet, no fill. The signal stripe is the only mark of
+   its kind here, and it is feathered vertically like .panel-edge. */
 .announcement {
   position: relative;
   margin: 0 0 2.2rem;
   padding: 0.95rem 1.2rem 1.05rem;
-  background: var(--panel-2);
-  border-left: 2px solid var(--signal);
+  background: none;
+}
+
+.announcement::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--signal);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 86%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 86%, transparent);
 }
 
 .announcement-label {
@@ -170,14 +185,15 @@
   border: 0;
 }
 
-/* night: the same pool, but keyed to the ink-warm accent at a whisper, so it
-   never becomes a lit patch on the dark sheet */
+/* night: the same pool, but keyed to the matte clay of the dark palette at a
+   whisper, so it reads as reflected warmth on black paper rather than a lit
+   patch sitting on top of it */
 body[data-mode="night"] .lead {
   background-image: radial-gradient(
     46% 132% at 42% 30%,
-    rgba(217, 119, 87, 0.07) 0%,
-    rgba(217, 119, 87, 0.028) 44%,
-    rgba(217, 119, 87, 0) 90%
+    rgba(210, 118, 79, 0.085) 0%,
+    rgba(210, 118, 79, 0.032) 44%,
+    rgba(210, 118, 79, 0) 90%
   );
 }
 
@@ -193,7 +209,7 @@ body[data-mode="night"] .lead {
     linear-gradient(var(--rule), var(--rule)),
     linear-gradient(var(--rule), var(--rule));
   background-repeat: no-repeat;
-  background-size: 100% 4px, 100% 4px;
+  background-size: 100% 1px, 100% 1px;
   background-position: 0 0, 0 100%;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
