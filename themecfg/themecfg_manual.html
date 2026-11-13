@@ -42,8 +42,8 @@
       <tr><td><code>默认模式</code></td><td><code>auto</code> / <code>day</code> / <code>night</code></td><td>首次访问的明暗模式；<code>auto</code> 跟随系统。右上角按钮随时切换并记住选择。</td></tr>
       <tr><td><code>链接颜色</code></td><td>CSS 颜色，留空为默认</td><td>亮色模式链接色；建议选深色以保证对比度。</td></tr>
       <tr><td><code>链接颜色（暗色）</code></td><td>CSS 颜色，留空为默认</td><td>暗色模式链接色；建议选浅色。</td></tr>
-      <tr><td><code>版心宽度（rem）</code></td><td><code>0</code> 或 <code>32..44</code></td><td><code>0</code> 跟随站点设置“使版心宽度更窄”（36/40rem）；填数字则强制覆盖。</td></tr>
-      <tr><td><code>首字下沉</code></td><td><code>true</code> / <code>false</code></td><td>文章首段首个汉字/字母放大；标点开头不下沉。</td></tr>
+      <tr><td><code>版心宽度（rem）</code></td><td><code>0</code> 或 <code>32..44</code></td><td><code>0</code> 跟随站点语言的默认版心（中文 40rem / 英文 34rem / 日文 38rem）；站点若开“使版心宽度更窄”，三者各减 4rem（36 / 30 / 34）。填 <code>32..44</code> 则在任何语言下强制覆盖。</td></tr>
+      <tr><td><code>首字下沉</code></td><td><code>true</code> / <code>false</code></td><td>中文、日文文章首段首个汉字放大；英文改用更克制的 <code>all-small-caps</code> 起首行，不做下沉。标点开头不下沉。</td></tr>
       <tr><td><code>显示页边目录</code></td><td><code>true</code> / <code>false</code></td><td>宽屏文章页右侧页边目录；不足 3 个标题时不显示。</td></tr>
       <tr><td><code>界面使用衬线</code></td><td><code>null</code> / <code>true</code> / <code>false</code></td><td><code>null</code> 跟随站点设置“优先使用衬线字体”；true/false 强制。</td></tr>
     </tbody>
