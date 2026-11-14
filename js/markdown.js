@@ -37,6 +37,113 @@ window.Antiphon = window.Antiphon || {};
     window.marked.setOptions({ gfm: true, breaks: false, headerIds: false, renderer: renderer });
   }
 
+  /* CommonMark's left-flanking rule rejects a delimiter run that opens with a
+     closing quotation mark, so bold-wrapped straight quotes — **"Nanokernel"**
+     — fail to parse and the reader sees raw asterisks. The repair rewrites
+     that one failure shape, **"…"**, into HTML strong tags before marked
+     runs; everything else passes through untouched, which is what makes it
+     safe:
+
+       • the pattern requires BOTH delimiters, so a lone **"x" with no
+         closing pair (an author mid-sentence) stays as typed;
+       • it matches within one line, so a bold spanning a paragraph break is
+         never rewritten across block boundaries;
+       • patterns marked already parses — *"x"* (asterisk inside the quotes
+         without wrapping), **a"b"c** (bold text that merely contains a
+         quote), curly quotes (“ ”), or **「…」** — simply do not match the
+         shape **"…"**, so there is nothing to guard away;
+       • code is exempt: fenced blocks (same fence grammar M.sectionCount
+         uses) and inline code spans are stashed before the rewrite and
+         restored verbatim after, so literal **"…"** samples in <code> keep
+         their asterisks.
+
+     The quoted span itself is HTML-escaped, so a quote containing < or & is
+     safe inside the injected <strong>, while any inline markdown the author
+     meant inside the emphasis still resolves in the parse that follows. */
+  var BOLD_QUOTE_FAIL = /\*\*"([^"\n]+)"\*\*/g;
+  var CODE_SPAN = /(`+)[^`]*\1/g;
+
+  function rewriteLine(line) {
+    /* Inline code spans leave the line, get rewritten prose, come back. */
+    var stashed = [];
+    var kept = line.replace(CODE_SPAN, function (span) {
+      stashed.push(span);
+      return "\x00" + (stashed.length - 1) + "\x00";
+    });
+    kept = kept.replace(BOLD_QUOTE_FAIL, function (match, quoted) {
+      return '<strong>"' + A.esc(quoted) + '"</strong>';
+    });
+    return kept.replace(/\x00(\d+)\x00/g, function (match, index) {
+      return stashed[Number(index)];
+    });
+  }
+
+  M.normalizeBoldQuotes = function (text) {
+    var source = String(text || "");
+    BOLD_QUOTE_FAIL.lastIndex = 0;
+    if (!BOLD_QUOTE_FAIL.test(source)) return source;
+    BOLD_QUOTE_FAIL.lastIndex = 0;
+    var lines = source.split("\n");
+    var out = [];
+    var inFence = false;
+    var fenceChar = "";
+    var inIndented = false;
+    var inList = false;
+    var afterBlank = true;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var fence = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+      if (fence) {
+        var marker = fence[1].charAt(0);
+        if (!inFence) {
+          inFence = true;
+          fenceChar = marker;
+        } else if (marker === fenceChar && !/\S/.test(line.slice(fence[0].length))) {
+          inFence = false;
+          fenceChar = "";
+        }
+        out.push(line);
+        afterBlank = false;
+        continue;
+      }
+      if (inFence) {
+        out.push(line);
+        continue;
+      }
+      /* Indented code blocks: 4+ real spaces of indent open top-level code
+         (the `opensCode` test below the list logic); a list context keeps
+         its indented lines as prose (continuations, nested items). The
+         list state is coarse — a marker line opens it, a flush non-marker
+         line closes it — which is exact enough for "is this line prose". */
+      /* Blockquote markers come off before the indent test, but only when a
+         `>` is really present — a bare `*` quantifier would otherwise eat
+         up to three plain leading spaces and misread indented code as
+         flush prose. */
+      var stripped = /^ {0,3}>/.test(line) ? line.replace(/^ {0,3}(>\s?)+/, "") : line;
+      var indent = stripped.match(/^[ \t]*/)[0].replace(/\t/g, "    ").length;
+      if (!/\S/.test(line)) {
+        out.push(line);
+        afterBlank = true;
+        continue;
+      }
+      if (inList && indent < 2 && !/^ {0,3}([-*+]|\d{1,9}[.)])(\s|$)/.test(stripped)) inList = false;
+      if (/^ {0,3}([-*+]|\d{1,9}[.)])(\s|$)/.test(stripped)) inList = true;
+      /* The blank-line flag is consumed here, before any prose path clears
+         it: an indented run only opens code when it follows a blank line
+         (or the document start, where afterBlank begins true) and never as
+         a lazy paragraph continuation. */
+      var opensCode = indent >= 4 && !inList && (afterBlank || inIndented);
+      afterBlank = false;
+      if (opensCode) {
+        inIndented = true;
+        out.push(line);
+        continue;
+      }
+      inIndented = false;
+      out.push(rewriteLine(line));
+    }
+    return out.join("\n");
+  };
   M.render = async function (text, baseurl) {
     try {
       /* Loading and configuring marked can itself fail — a blocked CDN leaves
@@ -46,7 +153,7 @@ window.Antiphon = window.Antiphon || {};
       await A.ensureMarked();
       configure();
       currentBaseurl = baseurl || "./";
-      return window.marked.parse(text);
+      return window.marked.parse(M.normalizeBoldQuotes(text));
     } catch (error) {
       console.error("[Antiphon] Markdown 渲染失败：", error);
       return "<p>" + A.esc(text) + "</p>";
@@ -213,6 +320,18 @@ window.Antiphon = window.Antiphon || {};
        initial-letter treatment. */
     var isCjk = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(first);
     if (!isCjk) return;
+    /* A 3em initial is a two-to-four-line commitment of the opening
+       paragraph. A one-line paragraph (a greeting, a dateline) cannot absorb
+       the float without overlapping the text below it, and an inline link
+       before the first sentence break would put a link's hit target inside
+       the magnified glyph, which reads badly and screens badly. Either case
+       keeps the opening plain — the same 标点开头不下沉 spirit, two more
+       "don't" clauses. The paragraph's full text (not just the leading text
+       node) is measured, so markdown that resolves to an early <a>/<em>
+       still counts its remaining prose toward the line estimate. */
+    var fullText = paragraph.textContent || "";
+    if (fullText.length < 80) return;
+    if (paragraph.querySelector("a, em, strong, code, img")) return;
     var span = document.createElement("span");
     span.className = "dropcap";
     span.textContent = first;
