@@ -632,7 +632,7 @@ window.Antiphon = window.Antiphon || {};
     if (article.modified && article.modified - article.created > 86400000) {
       cell(A.t("REVISED"), A.fmtDate(article.modified));
     }
-    if (!encrypted) cell(A.t("CAT_EXTENT"), A.num(minutes) + " " + A.t("MINUTES"));
+    if (!encrypted && minutes > 0) cell(A.t("CAT_EXTENT"), A.num(minutes) + " " + A.t("MINUTES"));
     if (sectionCount > 0) cell(A.t("CAT_SECTIONS"), A.num(sectionCount, 2));
     if (article.tags.length) cell(A.t("RUBRIC"), article.tags.map(function (tag) { return A.tagLabel(tag); }).join(" · "), true);
     if (!cells.length) return "";
@@ -642,7 +642,14 @@ window.Antiphon = window.Antiphon || {};
   /* The read-time line. Dates already live in the catalog card above, so this
      carries only the one fact the catalog cannot: how long the piece takes.
      阅读.显示阅读时长 (true by default) hides it for owners who would rather
-     not claim a number, and an encrypted article has no readable body to time. */
+     not claim a number, and an encrypted article has no readable body to time.
+
+     Both this and the catalog's extent cell are re-rendered from the decrypted
+     plaintext by V.bindPassword once the reader unlocks an article: before
+     decryption there is no body to measure, and the pre-unlock markup
+     deliberately omits the extent. `refresh` rewrites the two nodes in place
+     rather than repainting the header, so the stamp, kicker and title keep
+     their motion state and the scroll position does not jump. */
   V.articleMeta = function (article, minutes, encrypted) {
     if (encrypted) return "";
     if (A.getCfg("阅读.显示阅读时长", true) === false) return "";
@@ -653,6 +660,36 @@ window.Antiphon = window.Antiphon || {};
       "<span>" + A.esc(A.t("READ_TIME", { n: A.num(count) })) + "</span>" +
       "</div>"
     );
+  };
+
+  V.refreshArticleStats = function (main, article, minutes, sectionCount) {
+    var catalog = main.querySelector(".article-catalog");
+    if (catalog) {
+      var fresh = V.articleCatalog(article, minutes, false, sectionCount);
+      if (fresh) {
+        var wrapper = document.createElement("div");
+        wrapper.innerHTML = fresh;
+        var next = wrapper.firstElementChild;
+        if (next) catalog.parentNode.replaceChild(next, catalog);
+      }
+    }
+    var meta = main.querySelector(".article-meta");
+    var freshMeta = V.articleMeta(article, minutes, false);
+    if (freshMeta) {
+      if (meta) {
+        var metaWrap = document.createElement("div");
+        metaWrap.innerHTML = freshMeta;
+        meta.parentNode.replaceChild(metaWrap.firstElementChild, meta);
+      } else {
+        var anchor = main.querySelector(".article-catalog");
+        if (anchor) anchor.parentNode.insertBefore(
+          (function () { var w = document.createElement("div"); w.innerHTML = freshMeta; return w.firstElementChild; })(),
+          anchor.nextSibling
+        );
+      }
+    } else if (meta) {
+      meta.parentNode.removeChild(meta);
+    }
   };
 
   V.licenseBlock = function () {
@@ -710,9 +747,13 @@ window.Antiphon = window.Antiphon || {};
 
   V.commentsBlock = function (enabled, title) {
     if (!enabled) return "";
+    /* #disqus_thread is Disqus' own mount contract: embed.js looks it up by id
+       and DISQUS.reset() reuses it. Valine/Waline mount on #comments and
+       replace its children, so the extra node is inert for them. */
     return (
       '<section class="comment-area"><h2 class="comment-title">' + A.esc(A.t("COMMENTS")) + "</h2>" +
-      '<div id="comments" data-comments-title="' + A.esc(title || "") + '"></div></section>'
+      '<div id="comments" data-comments-title="' + A.esc(title || "") + '">' +
+      '<div id="disqus_thread"></div></div></section>'
     );
   };
 
@@ -722,8 +763,8 @@ window.Antiphon = window.Antiphon || {};
         var prose = main.querySelector("#article-prose, #page-prose") || main.querySelector(".article-body .prose");
         var text = prose ? prose.innerText : "";
         var original = button.textContent;
-        A.copyText(text).then(function () {
-          button.textContent = A.t("COPIED");
+        A.copyText(text).then(function (ok) {
+          button.textContent = A.t(ok ? "COPIED" : "COPY_FAILED");
           setTimeout(function () { button.textContent = original; }, 1400);
         });
       });
@@ -731,14 +772,18 @@ window.Antiphon = window.Antiphon || {};
     main.querySelectorAll('[data-action="share"]').forEach(function (button) {
       button.addEventListener("click", function () {
         var original = button.textContent;
-        A.copyText(window.location.href).then(function () {
-          button.textContent = A.t("LINK_COPIED");
+        A.copyText(window.location.href).then(function (ok) {
+          button.textContent = A.t(ok ? "LINK_COPIED" : "COPY_FAILED");
           setTimeout(function () { button.textContent = original; }, 1400);
         });
       });
     });
   };
 
+  /* The margin note (>=1340px) and the inline <details> contents below the
+     catalog card (<1340px, where the CSS hides .marginalia) are two renderings
+     of one heading list, so they are built together and share the click and
+     scroll-spy behaviour. Both are appended by the caller into the layout. */
   V.buildToc = function (main) {
     if (A.getCfg("外观.显示页边目录", true) === false) return;
     var layout = main.querySelector(".article-layout");
@@ -747,6 +792,14 @@ window.Antiphon = window.Antiphon || {};
     if (!prose) return;
     var headings = A.markdown.headings(prose);
     if (headings.length < 3) return;
+
+    function jump(id) {
+      var target = document.getElementById(id);
+      if (!target) return;
+      var behavior = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      target.scrollIntoView({ behavior: behavior, block: "start" });
+    }
+
     var aside = document.createElement("aside");
     aside.className = "marginalia";
     /* The visible heading is the archive's house word for a margin note, but
@@ -756,21 +809,111 @@ window.Antiphon = window.Antiphon || {};
     title.className = "marginalia-title";
     title.textContent = A.t("MARGINALIA");
     aside.appendChild(title);
+    var spyLinks = [];
     headings.forEach(function (heading) {
       var link = document.createElement("a");
       link.href = "#" + heading.id;
       link.textContent = heading.text;
+      link.setAttribute("data-toc-target", heading.id);
       if (heading.level === 3) link.classList.add("is-sub");
       link.addEventListener("click", function (event) {
         event.preventDefault();
-        var target = document.getElementById(heading.id);
-        if (!target) return;
-        var behavior = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-        target.scrollIntoView({ behavior: behavior, block: "start" });
+        jump(heading.id);
       });
+      spyLinks.push(link);
       aside.appendChild(link);
     });
     layout.appendChild(aside);
+
+    /* The inline contents for narrow viewports. A <details> keeps it out of the
+       way until asked for, needs no JS to open, and reads as a disclosure to
+       assistive tech without an ARIA patch. */
+    var details = document.createElement("details");
+    details.className = "toc-inline";
+    var summary = document.createElement("summary");
+    summary.textContent = A.t("TOC");
+    details.appendChild(summary);
+    var list = document.createElement("ol");
+    headings.forEach(function (heading) {
+      var item = document.createElement("li");
+      if (heading.level === 3) item.className = "is-sub";
+      var link = document.createElement("a");
+      link.href = "#" + heading.id;
+      link.textContent = heading.text;
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        jump(heading.id);
+        details.open = false;
+      });
+      item.appendChild(link);
+      list.appendChild(item);
+    });
+    details.appendChild(list);
+    /* Placed after the catalog/meta block so it reads as part of the header
+       apparatus rather than splitting the extent line from the card above it. */
+    var anchorNode = main.querySelector(".article-meta") || main.querySelector(".article-catalog");
+    if (anchorNode && anchorNode.parentNode) anchorNode.parentNode.insertBefore(details, anchorNode.nextSibling);
+    else {
+      var header = main.querySelector(".article-header");
+      if (header) header.appendChild(details);
+    }
+
+    V.watchHeadings(main, prose, spyLinks);
+  };
+
+  /* Scroll-spy for the marginalia. An IntersectionObserver with a narrow band
+     near the top of the viewport marks the heading currently being read; the
+     band is what makes the choice stable — a plain isIntersecting test flips
+     between two headings whenever both are on screen. When no heading is in
+     the band (long sections, or the reader is above the first one) the last
+     heading that crossed it stays marked, which is the behaviour a table of
+     contents should have.
+
+     #main is reused across routes, so the previous observer is disconnected
+     explicitly: a stale one would keep watching headings that are no longer
+     in the document and its callbacks would reference detached links. */
+  var tocObserver = null;
+
+  V.watchHeadings = function (main, prose, links) {
+    if (tocObserver) {
+      tocObserver.disconnect();
+      tocObserver = null;
+    }
+    if (!links || !links.length) return;
+    if (typeof IntersectionObserver !== "function") return;
+
+    var byId = {};
+    links.forEach(function (link) { byId[link.getAttribute("data-toc-target")] = link; });
+
+    function mark(id) {
+      links.forEach(function (link) {
+        var active = link.getAttribute("data-toc-target") === id;
+        link.classList.toggle("is-active", active);
+        if (active) link.setAttribute("aria-current", "true");
+        else link.removeAttribute("aria-current");
+      });
+    }
+
+    tocObserver = new IntersectionObserver(function (entries) {
+      var visible = entries
+        .filter(function (entry) { return entry.isIntersecting; })
+        .sort(function (a, b) { return a.boundingClientRect.top - b.boundingClientRect.top; });
+      if (visible.length) {
+        mark(visible[0].target.id);
+        return;
+      }
+      /* Nothing in the band: keep the reader oriented by marking the nearest
+         heading above the band, if one exists. */
+      var above = null;
+      prose.querySelectorAll("h2[id], h3[id]").forEach(function (heading) {
+        if (heading.getBoundingClientRect().top <= 96) above = heading;
+      });
+      if (above && byId[above.id]) mark(above.id);
+    }, { rootMargin: "-96px 0px -70% 0px", threshold: 0 });
+
+    prose.querySelectorAll("h2[id], h3[id]").forEach(function (heading) {
+      if (byId[heading.id]) tocObserver.observe(heading);
+    });
   };
 
   V.bindPassword = function (main, article, raw, baseurl) {
@@ -792,8 +935,25 @@ window.Antiphon = window.Antiphon || {};
         var holder = main.querySelector(".article-body");
         holder.innerHTML = '<div class="prose" id="article-prose">' + body + "</div>";
         await A.markdown.postProcess(holder.querySelector(".prose"));
+        /* The header card was rendered against the ciphertext, so its extent
+           and section count describe the sealed blob, not the article. They
+           are recomputed here from the plaintext, and the comments mount (the
+           render path returns early for sealed articles, so #comments was
+           never filled) and the action row (copy / share buttons were bound to
+           a body that did not exist yet, and postProcess() has since replaced
+           it) are re-established after the body lands. */
+        var minutes = A.readingMinutes(plain);
+        var sectionCount = A.markdown.sectionCount ? A.markdown.sectionCount(plain) : 0;
+        V.refreshArticleStats(main, article, minutes, sectionCount);
         V.buildToc(main);
         V.bindActions(main);
+        if (article.comments && A.comments && A.comments.mount) {
+          A.comments.mount(main, {
+            kind: "article",
+            filename: article.filename,
+            title: article.title
+          });
+        }
       } catch (decryptError) {
         if (error) {
           error.hidden = false;
@@ -823,7 +983,12 @@ window.Antiphon = window.Antiphon || {};
     var raw = await A.fetchText(A.articleUrl(filename));
     var minutes = A.readingMinutes(raw);
     var fileNo = String((article.index || 0) + 1).padStart(3, "0");
-    var sectionCount = (raw.match(/^\s*#{2}\s+/gm) || []).length;
+    /* Count headings on the source structure, not with a regex over the raw
+       text: a `##` line inside a fenced code block used to be counted as a
+       section, which inflated CAT_SECTIONS on exactly the posts that show
+       sample Markdown. For a sealed article the ciphertext has no headings at
+       all, so the count starts at zero and is filled in after decryption. */
+    var sectionCount = article.encrypted ? 0 : (A.markdown.sectionCount ? A.markdown.sectionCount(raw) : 0);
 
     var announcement = "";
     if (blog["启用网站公告"] === true && blog["网站公告仅在首页显示"] !== true) {
@@ -1150,13 +1315,31 @@ window.Antiphon = window.Antiphon || {};
 
   var searchBound = false;
 
+  /* Search index. Built once per locale rather than on every keystroke: the
+     records are rebuilt by A.rebuildLocalized() on a language switch, so the
+     cache is keyed on the array identity of A.state.visible. A missing or
+     replaced array invalidates it, and the cost of a rebuild is one map over
+     the visible set. */
+  var searchCache = { source: null, items: [] };
+
   function searchIndex() {
-    return A.state.visible.map(function (article) {
+    if (searchCache.source === A.state.visible) return searchCache.items;
+    searchCache.source = A.state.visible;
+    searchCache.items = A.state.visible.map(function (article) {
       return {
         article: article,
         haystack: (article.title + " " + article.excerpt + " " + article.tags.join(" ")).toLowerCase()
       };
     });
+    return searchCache.items;
+  }
+
+  function searchRows(query) {
+    var keyword = String(query || "").trim().toLowerCase();
+    if (!keyword) return [];
+    return searchIndex()
+      .filter(function (item) { return item.haystack.indexOf(keyword) !== -1; })
+      .slice(0, 20);
   }
 
   V.renderSearch = function (query) {
@@ -1167,9 +1350,7 @@ window.Antiphon = window.Antiphon || {};
       results.innerHTML = "";
       return;
     }
-    var matches = searchIndex()
-      .filter(function (item) { return item.haystack.indexOf(keyword) !== -1; })
-      .slice(0, 20);
+    var matches = searchRows(keyword);
     if (!matches.length) {
       results.innerHTML = '<p class="search-empty">' + A.esc(A.t("NO_RESULTS")) + "</p>";
       return;
@@ -1199,12 +1380,41 @@ window.Antiphon = window.Antiphon || {};
     if (!searchBound) {
       searchBound = true;
       input.addEventListener("input", function () { V.renderSearch(input.value); });
-      document.getElementById("search-results").addEventListener("click", function (event) {
+      var results = document.getElementById("search-results");
+      results.addEventListener("click", function (event) {
         var result = event.target.closest ? event.target.closest("[data-search-result]") : null;
         if (!result) return;
+        /* A modified or middle click means "open in a new tab" in every
+           browser; preventing the default would swallow that intent. This
+           mirrors the a[data-internal] handler in js/router.js. */
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         V.closeSearch();
         A.navigate(result.getAttribute("href"));
+      });
+      /* Arrow keys move a highlight through the result list and Enter opens
+         the highlighted row. Without this the overlay is usable only with a
+         pointer: the input holds focus, so nothing in the list is reachable
+         from the keyboard. */
+      input.addEventListener("keydown", function (event) {
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp" && event.key !== "Enter") return;
+        var rows = Array.prototype.slice.call(results.querySelectorAll("[data-search-result]"));
+        if (!rows.length) return;
+        var current = rows.findIndex(function (row) { return row.classList.contains("is-active"); });
+        if (event.key === "Enter") {
+          if (current === -1) return;
+          event.preventDefault();
+          var href = rows[current].getAttribute("href");
+          V.closeSearch();
+          A.navigate(href);
+          return;
+        }
+        event.preventDefault();
+        var next = event.key === "ArrowDown"
+          ? Math.min(rows.length - 1, current + 1)
+          : (current <= 0 ? 0 : current - 1);
+        rows.forEach(function (row, i) { row.classList.toggle("is-active", i === next); });
+        rows[next].scrollIntoView({ block: "nearest" });
       });
     }
     setTimeout(function () { input.focus(); }, 30);
@@ -1212,8 +1422,12 @@ window.Antiphon = window.Antiphon || {};
 
   V.closeSearch = function () {
     var overlay = document.getElementById("search-overlay");
-    if (!overlay) return;
+    if (!overlay || overlay.hidden) return;
     overlay.hidden = true;
     document.body.style.overflow = "";
+    /* Hand focus back to the control that opened the overlay; a dialog that
+       dumps focus on <body> strands keyboard users at the top of the page. */
+    var trigger = document.getElementById("search-btn");
+    if (trigger) trigger.focus();
   };
 })(window.Antiphon);

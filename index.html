@@ -13,6 +13,7 @@
   <meta property="og:site_name" content="" />
   <meta property="og:title" content="" />
   <meta property="og:description" content="" />
+  <meta property="og:url" content="" />
   <meta property="og:locale" content="en" />
   <title>Antiphon</title>
   <!-- Inline favicon: the theme's own concentric sigil (see V.sigil in js/views.js).
@@ -26,7 +27,19 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23110F0C'/%3E%3Cg fill='none' stroke='%239C3A24' stroke-width='2'%3E%3Ccircle cx='32' cy='32' r='21' opacity='.35'/%3E%3Ccircle cx='32' cy='32' r='13' opacity='.65'/%3E%3Ccircle cx='32' cy='32' r='5' opacity='.9'/%3E%3C/g%3E%3Ccircle cx='32' cy='32' r='2.5' fill='%23D2764F'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" />
+  <!-- Newsreader is loaded without blocking first paint. A stylesheet request
+       to fonts.googleapis.com sits on the critical path, so a slow or blocked
+       font CDN delayed the whole sheet — the paper, the rules and the body
+       copy all waited on a display face. media="print" makes the request
+       non-blocking; the inline onload swaps it to "all" once it arrives. The
+       stack in css/tokens.css already names Iowan Old Style / Palatino /
+       Georgia behind Newsreader, so the swap is a same-shape face change
+       rather than a reflow from a fallback serif. <noscript> keeps the font
+       for readers with scripting off. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" />
+  </noscript>
 
   <!-- The locale layer loads before the sheet paints, then immediately sets
        html[lang]/dir from the stored choice or navigator.languages. Loading it

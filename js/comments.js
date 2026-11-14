@@ -33,9 +33,50 @@ window.Antiphon = window.Antiphon || {};
     return typeof value === "string" && value.trim() !== "";
   }
 
+  /* The v2 terracotta (--signal in css/tokens.css). Rustaline takes a literal
+     colour, not a CSS variable, so the hex is repeated here; it must stay in
+     step with the token layer. */
+  var ACCENT = "#C2663C";
+
+  /* Live comment instances, so applyMode() can push a palette change into an
+     already-mounted widget instead of leaving it on the theme it booted with.
+     Waline exposes a documented update()/destroy() pair. Rustaline has no
+     setter, but it drives its own palette through the `rs-dark` class on the
+     element it was given, which is the contract its stylesheet uses. */
+  var mounted = null;
+
+  function nightNow() {
+    return document.body.getAttribute("data-mode") === "night";
+  }
+
+  function syncTheme(mode) {
+    var night = mode ? mode === "night" : nightNow();
+    if (!mounted) return;
+    mounted.mode = night ? "night" : "day";
+    if (mounted.kind === "waline" && mounted.instance && typeof mounted.instance.update === "function") {
+      try {
+        mounted.instance.update({ dark: night });
+      } catch (error) {
+        console.warn("[Antiphon] Waline 主题同步失败：", error);
+      }
+    } else if (mounted.kind === "rustaline") {
+      var root = (mounted.instance && mounted.instance.el) || document.getElementById("comments");
+      if (root && root.classList) root.classList.toggle("rs-dark", night);
+    }
+  }
+
   function mount(main, context) {
     var container = main.querySelector("#comments");
     if (!container) return;
+    /* A new route means the previous widget's DOM is gone. Drop the reference
+       first so a stale instance can never be themed into nodes that no longer
+       exist. Waline's destroy() is safe to call on an unmounted app. */
+    if (mounted && mounted.kind === "waline" && mounted.instance && typeof mounted.instance.destroy === "function") {
+      try {
+        mounted.instance.destroy();
+      } catch (error) {}
+    }
+    mounted = null;
     var comment = A.state.blog["全局评论设置"] || {};
     var valine = comment["valine设置"] || {};
     var waline = comment["waline设置"] || {};
@@ -88,13 +129,15 @@ window.Antiphon = window.Antiphon || {};
       ])
         .then(function () {
           if (!window.Waline || !window.Waline.init) throw new Error("Waline 未就绪");
-          window.Waline.init({
+          var night = nightNow();
+          var instance = window.Waline.init({
             el: "#comments",
             serverURL: String(waline["serverurl"]).replace(/\/$/, ""),
             path: path,
             lang: langCode(),
-            dark: document.body.getAttribute("data-mode") === "night"
+            dark: night
           });
+          mounted = { kind: "waline", instance: instance, mode: night ? "night" : "day" };
         })
         .catch(function (error) {
           console.error("[Antiphon] Waline 加载失败：", error);
@@ -112,14 +155,19 @@ window.Antiphon = window.Antiphon || {};
       A.loadScript(server + "/sdk/rustaline.js")
         .then(function () {
           if (!window.Rustaline) throw new Error("Rustaline SDK 未就绪");
-          new window.Rustaline({
+          /* darkMode used to be "auto", which follows the OS preference and
+             therefore ignored the theme's own Day/Night switch. The theme owns
+             the palette, so the value is passed explicitly from body[data-mode]. */
+          var night = nightNow();
+          var instance = new window.Rustaline({
             el: "#comments",
             server: server,
             url: path,
             lang: langCode(),
-            colorPattern: "#B08A46",
-            darkMode: "auto"
+            colorPattern: ACCENT,
+            darkMode: night ? "dark" : "light"
           });
+          mounted = { kind: "rustaline", instance: instance, mode: night ? "night" : "day" };
         })
         .catch(function (error) {
           console.error("[Antiphon] Rustaline 加载失败：", error);
@@ -134,6 +182,15 @@ window.Antiphon = window.Antiphon || {};
         return;
       }
       var shortname = String(disqus["shortname"]).trim();
+      /* embed.js and DISQUS.reset() both resolve the mount point by id, and
+         V.commentsBlock renders it. Recreate it defensively if a caller ever
+         hands us a bare #comments container: appending the script without a
+         target is the silent failure this guards against. */
+      if (!document.getElementById("disqus_thread")) {
+        var thread = document.createElement("div");
+        thread.id = "disqus_thread";
+        container.appendChild(thread);
+      }
       window.disqus_config = function () {
         this.page.identifier = path;
         this.page.url = window.location.href;
@@ -154,5 +211,5 @@ window.Antiphon = window.Antiphon || {};
     note(container, A.t("COMMENTS_UNAVAILABLE"));
   }
 
-  A.comments = { mount: mount };
+  A.comments = { mount: mount, syncTheme: syncTheme };
 })(window.Antiphon);

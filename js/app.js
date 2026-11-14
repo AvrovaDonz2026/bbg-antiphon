@@ -192,21 +192,35 @@ window.Antiphon = window.Antiphon || {};
      theme cannot know what a Chinese subtitle should say in German — but the
      resolved locale must reach the document so the page declares the language
      of its own chrome, and og:locale has to agree with html[lang] or social
-     cards advertise the wrong language to every non-Chinese visitor. */
-  function applyMetadata(blog) {
+     cards advertise the wrong language to every non-Chinese visitor.
+
+     `view` is the optional per-route overlay, supplied by the router after a
+     view paints: { title, description, url }. Without it the function behaves
+     exactly as before (site title + subtitle), which is what boot() and the
+     locale switcher need. With it, a shared article advertises the article's
+     own title and excerpt instead of the homepage's, while og:site_name keeps
+     naming the blog itself. */
+  function applyMetadata(blog, view) {
     blog = blog || A.state.blog || {};
+    view = view || {};
     var localized = A.state.langMeta || {};
-    var title = A.contentText("博客标题", blog["博客标题"]).trim() || "Antiphon";
-    var description = String((localized.description) || A.contentText("博客描述（副标题）", blog["博客描述（副标题）"]) || "");
+    var siteTitle = A.contentText("博客标题", blog["博客标题"]).trim() || "Antiphon";
+    var siteDescription = String((localized.description) || A.contentText("博客描述（副标题）", blog["博客描述（副标题）"]) || "");
+    var viewTitle = String(view.title || "").trim();
+    var viewDescription = String(view.description || "").trim();
+    var title = viewTitle || siteTitle;
+    var description = viewDescription || siteDescription;
     var info = A.localeInfo(A.lang);
     var descriptionNode = document.querySelector('meta[name="description"]');
     if (descriptionNode) descriptionNode.setAttribute("content", description);
 
-    ["og:title", "og:description", "og:locale", "og:site_name"].forEach(function (name) {
+    ["og:title", "og:description", "og:locale", "og:site_name", "og:url"].forEach(function (name) {
       var node = document.querySelector('meta[property="' + name + '"]');
       if (!node) return;
-      if (name === "og:title" || name === "og:site_name") node.setAttribute("content", title);
+      if (name === "og:title") node.setAttribute("content", title);
+      else if (name === "og:site_name") node.setAttribute("content", siteTitle);
       else if (name === "og:description") node.setAttribute("content", description);
+      else if (name === "og:url") node.setAttribute("content", view.url || window.location.href);
       else node.setAttribute("content", info.htmlLang.replace("-", "_"));
     });
     var localeNode = document.querySelector('meta[http-equiv="content-language"]');
@@ -216,18 +230,97 @@ window.Antiphon = window.Antiphon || {};
        rendered route writes "page — site", so the site half must be refreshed
        on every language change rather than only when the title is still the
        bare placeholder; otherwise switching locales leaves a stale brand in
-       the tab. Rebuild the suffix from the current name, keeping the page
-       prefix the route chose. */
+       the tab.
+
+       `view.route` marks a route render, where the title is *authoritative*:
+       a view with no title of its own (home, and any listing view that leaves
+       it blank) must reset to the bare site name rather than inherit the
+       prefix the previous view wrote — otherwise leaving an article for the
+       index leaves "论静默 — 对经" in the tab. Without that flag (boot, locale
+       switch) the prefix the route chose is kept and only the suffix is
+       rebuilt, which is the pre-existing behaviour. */
     var current = String(document.title || "");
     var sep = " - ";
-    if (current === "Antiphon" || current === "" || current.indexOf(sep) === -1) {
-      document.title = title;
+    if (viewTitle) {
+      document.title = viewTitle + sep + siteTitle;
+    } else if (view.route) {
+      document.title = siteTitle;
+    } else if (current === siteTitle || current === "Antiphon" || current === "" || current.indexOf(sep) === -1) {
+      document.title = siteTitle;
     } else {
-      document.title = current.slice(0, current.indexOf(sep)) + sep + title;
+      document.title = current.slice(0, current.indexOf(sep)) + sep + siteTitle;
     }
   }
 
   A.applyMetadata = applyMetadata;
+
+  /* ——— route transitions ———
+     A SPA route swap must not leave the previous view's chrome behind. Two
+     pieces of state outlive #main.innerHTML today: an open overlay (search
+     sheet, image viewer, the two masthead popovers) and the reading-progress
+     bar. Closing through the exact functions the close buttons call matters:
+     they are the ones that restore document.body.style.overflow, so a Back
+     press with the search sheet open no longer scroll-locks the page under a
+     modal that has nothing left to search.
+
+     Focus is restored here rather than inside those functions because it is
+     only wrong to strand it when a route change is what dismissed the dialog:
+     the close *buttons* deliberately leave focus where the reader put it, but
+     a Back press replaces the view the focused element lived in. Focus moves
+     only when an overlay was actually open, so ordinary navigation never
+     steals it. */
+  function closeOverlays() {
+    var search = document.getElementById("search-overlay");
+    var viewer = document.getElementById("image-viewer");
+    var fontMenu = document.getElementById("font-menu");
+    var langMenu = document.getElementById("lang-menu");
+    /* Read the open state before mutating it: the close helpers below flip
+       `hidden`, so this is the only moment the answer is still available. */
+    var hadSearch = !!(search && !search.hidden);
+    var hadViewer = !!(viewer && !viewer.hidden);
+    var hadFont = !!(fontMenu && !fontMenu.hidden);
+    var hadLang = !!(langMenu && !langMenu.hidden);
+
+    if (A.views && A.views.closeSearch) A.views.closeSearch();
+    closeViewer();
+    setFontMenuOpen(false);
+    setLangMenuOpen(false);
+
+    if (hadFont || hadLang) {
+      /* A popover is anchored to its own button, so focus returns there — the
+         same destination the Escape handler picks. */
+      var owner = document.getElementById(hadFont ? "font-btn" : "lang-btn");
+      if (owner) owner.focus();
+    } else if (hadSearch) {
+      var searchBtn = document.getElementById("search-btn");
+      if (searchBtn) searchBtn.focus();
+    } else if (hadViewer) {
+      /* The viewer is opened from an image that the route swap just removed;
+         focus goes to the new document body instead of nowhere. */
+      var main = document.getElementById("main");
+      if (main) {
+        main.setAttribute("tabindex", "-1");
+        main.focus();
+      }
+    }
+  }
+
+  /* The progress rail is derived from scroll position over the *current*
+     document height. A history jump scrolls to the top before the new view has
+     painted, so the scroll listener either does not fire or fires against the
+     old height; recomputing it here keeps the rail honest until the next real
+     scroll. */
+  function refreshProgress() {
+    var progress = document.querySelector("#progress > span");
+    if (!progress) return;
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - window.innerHeight;
+    var ratio = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+  }
+
+  A.closeOverlays = closeOverlays;
+  A.refreshProgress = refreshProgress;
 
   function randomVisitor() {
     var bytes = null;
@@ -287,6 +380,9 @@ window.Antiphon = window.Antiphon || {};
     updateModeButton(mode);
     if (A.light && A.light.setTheme) A.light.setTheme(mode === "night");
     if (A.views && A.views.renderFooter) A.views.renderFooter();
+    /* Comment widgets are mounted once and keep their own palette, so a mode
+       toggle has to push the new state into the live instance. */
+    if (A.comments && A.comments.syncTheme) A.comments.syncTheme(mode);
   }
 
   function toggleMode() {
@@ -396,12 +492,63 @@ window.Antiphon = window.Antiphon || {};
     return font;
   };
 
+  /* Focus follows the menu in both directions. Opening moves into the list of
+     faces; closing returns to the trigger, but only when focus is actually
+     inside the menu — a close triggered by clicking somewhere else on the page
+     must not pull focus back to a button the reader has moved away from. */
+  function restoreMenuFocus(menu, button) {
+    var active = document.activeElement;
+    if (active && menu.contains(active) && button) button.focus();
+  }
+
   function setFontMenuOpen(open) {
     var button = document.getElementById("font-btn");
     var menu = document.getElementById("font-menu");
     if (!button || !menu) return;
+    if (!open) restoreMenuFocus(menu, button);
     menu.hidden = !open;
     button.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) focusFirstMenuItem(menu);
+  }
+
+  /* Arrow keys inside a masthead popover. Both menus are role="menu" with
+     role="menuitemradio" rows, so the expected contract is roving arrow
+     movement, Enter/Space to choose, Home/End to the ends and Escape back to
+     the trigger. Menu rows are <button>s, so Enter and Space already activate
+     the focused row; this only supplies movement and the initial focus, which
+     a pointer-only implementation never needed but a keyboard user does. */
+  function menuButtons(menu) {
+    return Array.prototype.slice.call(menu.querySelectorAll("button")).filter(function (button) {
+      return !button.hidden;
+    });
+  }
+
+  function focusFirstMenuItem(menu) {
+    var buttons = menuButtons(menu);
+    if (!buttons.length) return;
+    var checked = buttons.filter(function (button) {
+      return button.getAttribute("aria-checked") === "true";
+    })[0];
+    (checked || buttons[0]).focus();
+  }
+
+  function bindMenuKeys(menuId) {
+    document.addEventListener("keydown", function (event) {
+      var menu = document.getElementById(menuId);
+      if (!menu || menu.hidden) return;
+      if (!menu.contains(event.target)) return;
+      var buttons = menuButtons(menu);
+      if (!buttons.length) return;
+      var index = buttons.indexOf(event.target);
+      var next = -1;
+      if (event.key === "ArrowDown") next = index < 0 ? 0 : (index + 1) % buttons.length;
+      else if (event.key === "ArrowUp") next = index <= 0 ? buttons.length - 1 : index - 1;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = buttons.length - 1;
+      else return;
+      event.preventDefault();
+      buttons[next].focus();
+    });
   }
 
   /* ——— masthead popovers ———
@@ -454,8 +601,10 @@ window.Antiphon = window.Antiphon || {};
     var button = document.getElementById("lang-btn");
     var menu = document.getElementById("lang-menu");
     if (!button || !menu) return;
+    if (!open) restoreMenuFocus(menu, button);
     menu.hidden = !open;
     button.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) focusFirstMenuItem(menu);
   }
 
   function chooseLocale(value) {
@@ -535,6 +684,8 @@ window.Antiphon = window.Antiphon || {};
     });
     bindFontMenu();
     bindLangMenu();
+    bindMenuKeys("font-menu");
+    bindMenuKeys("lang-menu");
 
     document.addEventListener("keydown", function (event) {
       var key = event.key;
@@ -628,6 +779,55 @@ window.Antiphon = window.Antiphon || {};
     );
   }
 
+  /* ——— extensions ———
+     自定义JS and 插件列表 are boot scripts: they attach document-level listeners,
+     start timers and sometimes inject third-party widgets. runExtensions() is
+     called on every route render (and on every locale switch), and it used to
+     window.eval() both unconditionally, so a reader who clicked through ten
+     articles accumulated ten copies of every listener and timer.
+
+     They are now keyed by identity *and* by source text: an unchanged script
+     runs exactly once per document, while editing the string in the site
+     config still re-runs it on the next navigation. The CSS branch has always
+     worked this way through the #antiphon-custom-css guard.
+
+     Plugins that genuinely need per-route work should opt in with
+     A.onRoute(handler) rather than relying on the eval being replayed; the
+     handler receives the route object and is unregistered by the returned
+     function. Both the guard and the hook are additive: a plugin written
+     against the old behaviour keeps running, just once. */
+  var executedExtensions = {};
+  var routeListeners = [];
+
+  function extensionRan(key, source) {
+    if (Object.prototype.hasOwnProperty.call(executedExtensions, key) && executedExtensions[key] === source) {
+      return true;
+    }
+    executedExtensions[key] = source;
+    return false;
+  }
+
+  A.onRoute = function (handler) {
+    if (typeof handler !== "function") return function () {};
+    routeListeners.push(handler);
+    var registered = handler;
+    return function () {
+      var at = routeListeners.indexOf(registered);
+      if (at !== -1) routeListeners.splice(at, 1);
+    };
+  };
+
+  A.routeChanged = function (route) {
+    var current = route || A.route || null;
+    routeListeners.slice().forEach(function (handler) {
+      try {
+        handler(current);
+      } catch (error) {
+        console.error("[Antiphon] 路由钩子执行失败：", error);
+      }
+    });
+  };
+
   function runExtensions() {
     var blog = A.state.blog;
     if (!blog) return;
@@ -638,17 +838,28 @@ window.Antiphon = window.Antiphon || {};
       document.head.appendChild(style);
     }
     if (blog["启用自定义JS"] === true && blog["自定义JS"]) {
-      try {
-        window.eval(String(blog["自定义JS"]));
-      } catch (error) {
-        console.error("[Antiphon] 自定义 JS 执行失败：", error);
+      var customSource = String(blog["自定义JS"]);
+      if (!extensionRan("custom-js", customSource)) {
+        try {
+          window.eval(customSource);
+        } catch (error) {
+          console.error("[Antiphon] 自定义 JS 执行失败：", error);
+        }
       }
     }
     if (blog["是否启用插件功能"] === true) {
-      (blog["插件列表"] || []).forEach(function (plugin) {
+      (blog["插件列表"] || []).forEach(function (plugin, index) {
         if (!plugin || plugin["是否启用此插件"] !== true) return;
+        var source = String(plugin["插件内容"] || "");
+        if (!source) return;
+        /* Identity is the configured name so reordering the list cannot re-run
+           an unchanged plugin; an unnamed slot falls back to its position. The
+           source string is compared as well, so editing a plugin re-runs it. */
+        var name = String(plugin["插件名称"] || "").trim();
+        var key = "plugin:" + (name || "@" + index);
+        if (extensionRan(key, source)) return;
         try {
-          window.eval(String(plugin["插件内容"] || ""));
+          window.eval(source);
         } catch (error) {
           console.error("[Antiphon] 插件执行失败：", plugin["插件名称"] || "", error);
         }
@@ -719,6 +930,9 @@ window.Antiphon = window.Antiphon || {};
     appliedMode: function () { return document.body.getAttribute("data-mode"); },
     afterRoute: function () {
       if (A.light && A.light.setTheme) A.light.setTheme(document.body.getAttribute("data-mode") === "night");
+      /* Documented opt-in for plugins that need per-route work: they register
+         once via A.onRoute() instead of being re-evaluated on every render. */
+      if (A.routeChanged) A.routeChanged(A.route);
     }
   };
 

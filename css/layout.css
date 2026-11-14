@@ -472,6 +472,79 @@ body:not([data-script]):lang(en) .blog-subtitle {
   opacity: 0.85;
 }
 
+/* The heading currently in the reading band. Colour plus the leading rule,
+   which is already the hover affordance, so the active state is the same
+   gesture held rather than a second visual language. */
+.marginalia a.is-active {
+  color: var(--seal);
+  border-inline-start-color: var(--seal);
+}
+
+/* ——— inline contents for narrow viewports ———
+   .marginalia is hidden below 1340px because the outer gutter can no longer
+   hold a readable note. This <details> takes its place inside the sheet,
+   directly under the catalog card, and is hidden again at the width where the
+   margin note returns. Desktop-only by construction: no JS branching on width,
+   so the two presentations cannot disagree. */
+.toc-inline {
+  display: none;
+  max-width: var(--measure);
+  margin: 1.4rem auto 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.toc-inline > summary {
+  cursor: pointer;
+  padding-block: 0.45rem;
+  border-block: 1px solid var(--rule);
+  color: var(--seal);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  list-style: none;
+}
+
+.toc-inline > summary::-webkit-details-marker { display: none; }
+
+.toc-inline > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-inline-end: 0.55rem;
+  transition: transform var(--dur) var(--ease);
+}
+
+.toc-inline[open] > summary::before { transform: rotate(90deg); }
+
+.toc-inline ol {
+  margin: 0.5rem 0 0;
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.toc-inline li {
+  margin: 0;
+  padding-block: 0.22rem;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.toc-inline li.is-sub {
+  padding-inline-start: 1.2rem;
+  opacity: 0.85;
+}
+
+.toc-inline a { color: inherit; text-decoration: none; }
+.toc-inline a:hover { color: var(--seal); }
+
+@media (max-width: 1339px) {
+  .toc-inline { display: block; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toc-inline > summary::before { transition: none; }
+}
+
 /* ——— footer ——— */
 
 #footer {

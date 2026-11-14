@@ -29,7 +29,7 @@ window.Antiphon = window.Antiphon || {};
     },
     "窗光": {
       "启用": true,
-      "强度": 0.45,
+      "强度": 0.55,
       "粒子密度": 0.5,
       "帧率上限": 60,
       "默认开启": true
@@ -286,7 +286,17 @@ window.Antiphon = window.Antiphon || {};
       script.src = src;
       script.async = true;
       script.onload = function () { resolve(script); };
-      script.onerror = function () { reject(new Error("无法加载脚本：" + src)); };
+      script.onerror = function () {
+        /* A failed load must not stay cached. Keeping the rejected promise
+           meant one network blip poisoned every later view for the session,
+           because loadScript() handed the same rejection back forever and no
+           caller could retry. Evict on failure so a later navigation gets a
+           second chance; the <script> node is also dropped so the dead tag
+           does not linger in <head>. */
+        delete A.state.scriptPromises[src];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        reject(new Error("无法加载脚本：" + src));
+      };
       document.head.appendChild(script);
     });
     return A.state.scriptPromises[src];
@@ -299,7 +309,13 @@ window.Antiphon = window.Antiphon || {};
       link.rel = "stylesheet";
       link.href = href;
       link.onload = function () { resolve(link); };
-      link.onerror = function () { reject(new Error("无法加载样式：" + href)); };
+      link.onerror = function () {
+        /* Same eviction rule as loadScript(): a stylesheet that fails once
+           (offline, CDN flake) must be retryable, not permanently poisoned. */
+        delete A.state.stylePromises[href];
+        if (link.parentNode) link.parentNode.removeChild(link);
+        reject(new Error("无法加载样式：" + href));
+      };
       document.head.appendChild(link);
     });
     return A.state.stylePromises[href];
@@ -311,7 +327,11 @@ window.Antiphon = window.Antiphon || {};
     A.state.markedPromise = A.loadScript(A.cdn("marked@4.3.0/marked.min.js")).then(function () {
       if (!window.marked) throw new Error("marked 未就绪");
       return window.marked;
-    });
+    })
+      .catch(function (error) {
+        A.state.markedPromise = null;
+        throw error;
+      });
     return A.state.markedPromise;
   };
 
@@ -530,11 +550,35 @@ window.Antiphon = window.Antiphon || {};
     return out;
   };
 
+  /* Reading time. The old counter recognised Han ideographs and ASCII Latin
+     words only, so a Russian, Arabic, Korean or Japanese article scored zero on
+     both counts and reported the one-minute floor no matter how long it was.
+     The theme ships eleven locales; a Japanese article is kana + kanji and a
+     Korean one is hangul, which are the two most affected by that gap.
+
+     Rates are per unit of reading, not per codepoint:
+       • Han ideographs — 300/min (unchanged from the original);
+       • kana — 400/min, because a kana is a mora and Japanese prose carries
+         more information per glyph than a Latin word;
+       • words — 220/min. "Word" here means a whitespace-delimited token that
+         contains at least one letter from a space-separated script: Latin,
+         Cyrillic, Greek, Arabic, accented Latin, or Hangul. Han/kana glyphs
+         are stripped before that test, so a Chinese sentence with no spaces
+         does not count as one word, and a mixed token ("用Node构建") counts
+         once as a word on top of its counted ideographs.
+     Script-group counting keeps each script priced at its own rate instead of
+     pretending every locale reads like English. */
   A.readingMinutes = function (text) {
     var content = String(text || "");
-    var cjk = (content.match(/\p{Script=Han}/gu) || []).length;
-    var words = (content.match(/[A-Za-z]+(?:['\u2019-][A-Za-z]+)*/g) || []).length;
-    var minutes = Math.ceil(cjk / 300 + words / 220);
+    var han = (content.match(/\p{Script=Han}/gu) || []).length;
+    var kana = (content.match(/[\p{Script=Hiragana}\p{Script=Katakana}]/gu) || []).length;
+    var words = 0;
+    content.split(/\s+/).forEach(function (token) {
+      if (!token) return;
+      var stripped = token.replace(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/gu, "");
+      if (/[\p{L}\p{M}]/u.test(stripped)) words += 1;
+    });
+    var minutes = Math.ceil(han / 300 + kana / 400 + words / 220);
     return Math.max(1, minutes);
   };
 
@@ -560,6 +604,12 @@ window.Antiphon = window.Antiphon || {};
     return Math.min(max, Math.max(min, number));
   };
 
+  /* Resolves with a boolean: true when the text reached the clipboard, false
+     when both the async Clipboard API and the <textarea>/execCommand fallback
+     failed. It never rejects, so a caller can print a truthful "Copied" or
+     "Copy failed" label without an unhandled-rejection path. The previous
+     version swallowed execCommand's return value and always looked successful,
+     which is how the code-block button could claim success over a no-op. */
   A.copyText = function (text) {
     var value = String(text == null ? "" : text);
     function fallback() {
@@ -570,13 +620,17 @@ window.Antiphon = window.Antiphon || {};
       area.style.opacity = "0";
       document.body.appendChild(area);
       area.select();
-      try { document.execCommand("copy"); } catch (error) {}
+      var ok = false;
+      try { ok = document.execCommand("copy") === true; } catch (error) { ok = false; }
       document.body.removeChild(area);
+      return ok;
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(value).catch(fallback);
+      return navigator.clipboard.writeText(value).then(
+        function () { return true; },
+        function () { return fallback(); }
+      );
     }
-    fallback();
-    return Promise.resolve();
+    return Promise.resolve(fallback());
   };
 })(window.Antiphon);

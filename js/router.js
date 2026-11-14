@@ -40,11 +40,47 @@ window.Antiphon = window.Antiphon || {};
     };
   }
 
+  /* Per-route document metadata. applyMetadata() owns the <meta> writes and
+     falls back to the blog root when a view has nothing to say; this function
+     only decides *which* view facts to hand it. Article descriptions come from
+     the (already localised) excerpt so a shared link previews the piece rather
+     than the homepage subtitle. Home has no title of its own, so it falls back
+     to the site name — exactly the pre-existing behaviour. */
+  function viewMetadata(route, result) {
+    var view = {
+      title: result && result.title ? String(result.title) : "",
+      description: "",
+      url: window.location.href,
+      /* Authoritative-title flag: see the title branch in applyMetadata. */
+      route: true
+    };
+    if (route.view === "article" && A.getArticle) {
+      var article = A.getArticle(route.filename);
+      if (article) {
+        if (!view.title) view.title = article.title;
+        view.description = String(article.excerpt || "");
+      }
+    } else if (route.view === "page" && A.getPage) {
+      var page = A.getPage(route.filename);
+      if (page && !view.title) view.title = page.title;
+    } else if (route.view === "tag") {
+      /* The tag route's title already carries the localised label. */
+      view.description = "";
+    }
+    return view;
+  }
+
   async function renderRoute() {
     var token = ++renderToken;
     var route = A.parseRoute(window.location.search);
     A.route = route;
     A.views.updateNavActive(route);
+
+    /* Unlock the document before the new view paints. With the search sheet or
+       image viewer open, body overflow is "hidden"; leaving it set through a
+       Back/Forward jump would present the new page scroll-locked under a modal
+       that no longer has anything open to it. */
+    if (A.closeOverlays) A.closeOverlays();
 
     var result;
     try {
@@ -87,15 +123,24 @@ window.Antiphon = window.Antiphon || {};
     }
     if (token !== renderToken) return;
 
-    /* The fallback site name is the theme's Latin brand, not the literal
-       Chinese "对经": a site with no 博客标题 set must not put a Chinese word
-       in the tab of every English, Arabic or Portuguese visitor. The
-       content sidecar may name this locale's title, which is why the value
-       is read through V.siteName rather than straight off the config. */
-    var siteTitle = A.views && A.views.siteName ? A.views.siteName() : (A.state.blog ? A.state.blog["博客标题"] || "Antiphon" : "Antiphon");
-    document.title = result.title ? result.title + " - " + siteTitle : siteTitle;
+    /* Metadata is part of the paint, not a boot-time side effect: a shared
+       article must advertise its own title/excerpt, and og:url has to follow
+       the route the reader is actually on. applyMetadata() owns the <title>
+       and keeps the blog-root fallback for views with no title of their own,
+       which is the same value the old hand-composed line produced. */
+    if (A.applyMetadata) {
+      A.applyMetadata(A.state.blog, viewMetadata(route, result));
+    } else {
+      /* Defensive only: app.js defines applyMetadata before boot() runs. */
+      var siteTitle = A.views && A.views.siteName ? A.views.siteName() : "Antiphon";
+      document.title = result.title ? result.title + " - " + siteTitle : siteTitle;
+    }
 
     window.scrollTo(0, 0);
+    /* Recompute the rail against the freshly painted height: scrollTo(0, 0)
+       fires the listener before layout settles, so without this a jump from a
+       long article to a short page can strand a partially filled bar. */
+    if (A.refreshProgress) A.refreshProgress();
     if (A.runExtensions) A.runExtensions();
     if (A.app && A.app.afterRoute) A.app.afterRoute();
   }

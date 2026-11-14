@@ -31,8 +31,8 @@ window.Antiphon = window.Antiphon || {};
   var state = {
     canvas: null, gl: null, program: null, buffer: null, uniforms: {},
     running: false, raf: 0, enabled: true, fallenBack: false,
-    startTime: 0, lastFrame: 0, fps: 60, intensity: 0.45, dust: 0.5,
-    dark: false, renderOnce: false, debug: null, started: false
+    startTime: 0, lastFrame: 0, fps: 60, intensity: 0.55, dust: 0.5,
+    dark: false, renderOnce: false, reduced: false, debug: null, started: false
   };
 
   function debugSlot() {
@@ -137,14 +137,42 @@ window.Antiphon = window.Antiphon || {};
     state.raf = 0;
   }
 
+  /* Under prefers-reduced-motion the shader is drawn exactly once and the
+     canvas is kept as a still image. The previous implementation drew its
+     single frame, cleared renderOnce, and then forced data-light="on" and
+     enabled=false regardless of what the reader or the config asked for — so a
+     visitor who had turned the light off saw it come back on at boot, and the
+     Day/Night toggle could not repaint the frame because setTheme() only draws
+     when renderOnce is true. `state.reduced` records the media query so
+     enable() keeps honouring it for the life of the page: turning the light on
+     with the button repaints the still frame instead of starting the 60fps
+     loop the reader asked not to see. */
+  function reducedMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  function startStaticFrame() {
+    state.renderOnce = true;
+    draw(state.startTime);
+    state.debug.mode = "ok";
+  }
+
   function enable(on) {
     state.enabled = on;
     if (state.fallenBack) {
       document.body.setAttribute("data-light", "fallback");
       return;
     }
-    if (on) startLoop();
-    else {
+    if (on) {
+      if (state.reduced) {
+        /* Reduced motion: never start the 60fps loop, just repaint the still
+           frame for the theme now in force. */
+        startStaticFrame();
+        document.body.setAttribute("data-light", "on");
+        return;
+      }
+      startLoop();
+    } else {
       stopLoop();
       document.body.setAttribute("data-light", "off");
       state.debug.mode = "off";
@@ -188,7 +216,7 @@ window.Antiphon = window.Antiphon || {};
     var opts = options || {};
     state.debug = debugSlot();
     state.canvas = canvas;
-    state.intensity = isFinite(Number(opts.intensity)) ? Number(opts.intensity) : 0.45;
+    state.intensity = isFinite(Number(opts.intensity)) ? Number(opts.intensity) : 0.55;
     state.dust = isFinite(Number(opts.dust)) ? Number(opts.dust) : 0.5;
     state.fps = opts.fps === 30 || opts.fps === 45 ? opts.fps : 60;
     state.dark = opts.dark === true;
@@ -222,16 +250,24 @@ window.Antiphon = window.Antiphon || {};
       document.body.setAttribute("data-light", state.enabled ? "on" : "off");
       state.debug.mode = state.enabled ? "ok" : "off";
 
-      var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var reduced = reducedMotion();
+      /* Recorded on the instance, not re-read only at boot: enable() consults it
+         so the light button also stays loop-free under reduced motion. */
+      state.reduced = reduced;
       if (reduced) {
-        state.renderOnce = true;
-        draw(state.startTime);
-        state.renderOnce = false;
-        document.body.setAttribute("data-light", "on");
-        state.debug.mode = "ok";
-        state.enabled = false;
+        /* Reduced motion never runs the loop, and it no longer overrides the
+           reader's or config's choice: when the light is disabled, boot leaves
+           data-light="off" and draws nothing; when it is enabled, one frame is
+           drawn and renderOnce stays true so setTheme() can repaint it. */
+        if (state.enabled) {
+          startStaticFrame();
+          document.body.setAttribute("data-light", "on");
+        } else {
+          state.renderOnce = false;
+        }
         return;
       }
+      state.renderOnce = false;
       if (state.enabled) startLoop();
       else stopLoop();
     } catch (error) { fallback(error); }
@@ -243,11 +279,16 @@ window.Antiphon = window.Antiphon || {};
     setEnabled: enable,
     setIntensity: function (value) {
       var number = Number(value);
-      state.intensity = isFinite(number) ? Math.min(1, Math.max(0, number)) : 0.45;
+      state.intensity = isFinite(number) ? Math.min(1, Math.max(0, number)) : 0.55;
     },
     setTheme: function (dark) {
       state.dark = dark === true;
-      if (state.renderOnce) draw(window.performance.now());
+      /* In reduced-motion mode the canvas is a still image, so the theme switch
+         has to repaint it — there is no loop to pick the new uniform up. Only
+         repaint when the light is actually on: a hidden canvas (data-light
+         "off") would throw away the frame the reader will reveal by turning
+         the light back on. */
+      if (state.renderOnce && state.enabled) draw(window.performance.now());
     },
     isRunning: function () { return state.running; }
   };

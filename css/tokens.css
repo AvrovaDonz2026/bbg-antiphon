@@ -45,10 +45,17 @@
      CJK glyphs fall through to the Song face. Both scripts keep one stack,
      which is what makes mixed paragraphs (中文 quoting English) behave. */
 
-  --font-ui-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+  /* Two spellings of every Noto CJK face are listed, because the font ships
+     under two names: `Noto Serif SC` is the Google Fonts / macOS-installed
+     family, while distro packages (`fonts-noto-cjk` on Debian/Ubuntu,
+     Fedora, Arch, and Android's system fonts) register `Noto Serif CJK SC`.
+     Without the `CJK` spelling a Linux browser matches nothing and falls
+     through to the generic serif, which is a different face per distro. */
+
+  --font-ui-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", Arial, sans-serif;
 
   --font-latin: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-cjk: "Songti SC", "Songti TC", "Noto Serif SC", "Source Han Serif SC", "Source Han Serif CN", STSong, serif;
+  --font-cjk: "Songti SC", "Songti TC", "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Source Han Serif CN", STSong, serif;
   --font-serif: var(--font-latin), var(--font-cjk), serif;
 
   /* The Gothic counterparts. Needed separately from --font-ui-sans: that stack
@@ -57,7 +64,7 @@
      property means a sans preset can swap --font-cjk without having to know
      which language is active. */
   --font-cjk-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    "Noto Sans SC", "Source Han Sans SC", sans-serif;
+    "Noto Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
 
   /* display: same faces, opt into fuller optical sizes for headlines */
   --font-display: var(--font-latin), var(--font-cjk), serif;
@@ -65,7 +72,7 @@
   --font-ui: var(--font-ui-sans);
 
   --font-mono-latin: ui-monospace, "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace;
-  --font-mono-cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", monospace;
+  --font-mono-cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", monospace;
   --font-mono: var(--font-mono-latin), var(--font-mono-cjk), monospace;
 
   --text-base: 17px;
@@ -198,13 +205,13 @@ body:not([data-script]):lang(zh) {
 body[data-script="ja"],
 body:not([data-script]):lang(ja) {
   --font-cjk: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP",
-    "Source Han Serif JP", "Songti SC", serif;
+    "Noto Serif CJK JP", "Source Han Serif JP", "Songti SC", serif;
   --font-cjk-sans: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
-    "Source Han Sans JP", "PingFang SC", sans-serif;
+    "Noto Sans CJK JP", "Source Han Sans JP", "PingFang SC", sans-serif;
   --font-serif: var(--font-latin), var(--font-cjk), serif;
   --font-display: var(--font-latin), var(--font-cjk), serif;
   --font-mono-cjk: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
-    "PingFang SC", monospace;
+    "Noto Sans CJK JP", "PingFang SC", monospace;
   --font-mono: var(--font-mono-latin), var(--font-mono-cjk), monospace;
   --leading-body: 1.9;
   --measure: 38rem;
@@ -251,13 +258,14 @@ body[data-script="hant"],
 body:not([data-script]):lang(zh-Hant),
 body:not([data-script]):lang(zh-TW),
 body:not([data-script]):lang(zh-HK) {
-  --font-cjk: "Songti TC", "Songti SC", "Noto Serif TC", "Source Han Serif TC",
-    "Source Han Serif TW", STSong, serif;
+  --font-cjk: "Songti TC", "Songti SC", "Noto Serif TC", "Noto Serif CJK TC",
+    "Source Han Serif TC", "Source Han Serif TW", STSong, serif;
   --font-serif: var(--font-latin), var(--font-cjk), serif;
   --font-display: var(--font-latin), var(--font-cjk), serif;
   --font-cjk-sans: "PingFang TC", "Hiragino Sans CNS", "Microsoft JhengHei",
-    "Noto Sans TC", "Source Han Sans TC", sans-serif;
-  --font-mono-cjk: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", monospace;
+    "Noto Sans TC", "Noto Sans CJK TC", "Source Han Sans TC", sans-serif;
+  --font-mono-cjk: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC",
+    "Noto Sans CJK TC", monospace;
   --font-mono: var(--font-mono-latin), var(--font-mono-cjk), monospace;
   --leading-body: 1.82;
   --measure: 40rem;
@@ -278,12 +286,13 @@ body:not([data-script]):lang(zh-HK) {
 body[data-script="ko"],
 body:not([data-script]):lang(ko) {
   --font-cjk: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Serif KR",
-    "Source Han Serif KR", "Nanum Myeongjo", serif;
+    "Noto Serif CJK KR", "Source Han Serif KR", "Nanum Myeongjo", serif;
   --font-serif: var(--font-latin), var(--font-cjk), serif;
   --font-display: var(--font-latin), var(--font-cjk), serif;
   --font-cjk-sans: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR",
-    "Source Han Sans KR", sans-serif;
-  --font-mono-cjk: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", monospace;
+    "Noto Sans CJK KR", "Source Han Sans KR", sans-serif;
+  --font-mono-cjk: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR",
+    "Noto Sans CJK KR", monospace;
   --font-mono: var(--font-mono-latin), var(--font-mono-cjk), monospace;
   --leading-body: 1.78;
   --measure: 37rem;

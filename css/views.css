@@ -1213,6 +1213,13 @@ body:not([data-script]):lang(en) .article-dek {
   color: inherit;
 }
 
+/* Keyboard highlight for the ArrowUp/ArrowDown navigation in V.openSearch.
+   :focus-visible alone would not show, because focus stays in the input. */
+.search-result.is-active {
+  background: var(--panel-2);
+  box-shadow: inset 2px 0 0 var(--signal);
+}
+
 .result-no {
   display: inline-block;
   margin-inline-end: 0.55rem;
@@ -1446,11 +1453,26 @@ body:not([data-script]):lang(en) .article-dek {
   .archive-row { grid-template-columns: 2.6rem 1fr; }
   .friends { grid-template-columns: 1fr; }
   .article-catalog { grid-template-columns: 1fr 1fr; }
-  .catalog-cell { padding-inline-end: 0.9rem; }
-  .catalog-cell + .catalog-cell { padding-inline-start: 0; border-inline-end: 0; }
+  /* Two fixed columns, so a cell is in the second column exactly when it is
+     even and in a later row exactly when it follows the first pair. Written
+     that way round — "second column" instead of "the previous cell drops its
+     end border" — every boundary gets exactly one 1px rule for any cell count:
+     a 5-cell catalog (REVISED present) no longer leaves cells 3-4 with no
+     bottom rule, and cells 1-2 no longer meet in a 2px double divider.
+     All of it is logical, so RTL mirrors without extra rules. */
+  .catalog-cell {
+    padding-inline-end: 0.9rem;
+    border-inline-end: 0;
+  }
+  .catalog-cell + .catalog-cell { padding-inline-start: 0; }
   .catalog-cell:nth-child(even) {
     padding-inline-start: 0.9rem;
     border-inline-start: 1px solid var(--rule);
   }
-  .catalog-cell:nth-child(-n + 2) { border-bottom: 1px solid var(--rule); }
+  .catalog-cell:nth-child(n + 3) { border-block-start: 1px solid var(--rule); }
+  /* An odd cell count leaves one cell alone on the final row. Spanning it
+     across both columns keeps its top rule full width instead of ending in
+     mid-air above an empty slot. `:last-child:nth-child(odd)` is a structural
+     fact in a two-column grid, not a parity guess. */
+  .catalog-cell:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }

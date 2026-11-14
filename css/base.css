@@ -759,6 +759,86 @@ body[dir="rtl"] .prose a[href^="http"] {
   text-align: start;
 }
 
+/* Authored prose keeps the direction the author wrote in.
+   The interface mirrors for RTL, but an article body, a site subtitle, a
+   pull-quote or an excerpt is never translated: a Chinese sentence stays
+   Chinese inside an Arabic page. Inheriting the document `dir` makes those
+   blocks resolve as RTL paragraphs, and the bidi algorithm then treats a
+   trailing 。 or . as a neutral at the end of an RTL run, so it is painted at
+   the visual start of the line — 「。在纸与光之间，抄写每一次呼吸」 — instead of
+   where the author typed it.
+
+   `unicode-bidi: plaintext` gives each of these blocks the base direction of
+   its own first strong character (UAX #9 P2/P3), which is exactly the rule
+   the authored text already follows. `text-align: start` then follows that
+   resolved direction too, so an English excerpt goes flush left in the Arabic
+   interface while an Arabic one stays flush right. UI chrome is untouched:
+   these selectors only name author-written copy.
+
+   Each block is listed individually rather than hanging the fix off `.prose`:
+   `unicode-bidi` is not inherited, and a container-only declaration would
+   leave every nested paragraph, list item and caption on the RTL base. */
+body[dir="rtl"] .blog-subtitle,
+body[dir="rtl"] .lead-title,
+body[dir="rtl"] .lead-dek,
+body[dir="rtl"] .entry-title,
+body[dir="rtl"] .entry-excerpt,
+body[dir="rtl"] .article-title,
+body[dir="rtl"] .article-dek,
+body[dir="rtl"] .search-result-title,
+body[dir="rtl"] .search-result-excerpt,
+body[dir="rtl"] .verse,
+body[dir="rtl"] .license-block,
+body[dir="rtl"] .friend-note,
+body[dir="rtl"] .footer-bottom,
+body[dir="rtl"] .prose p,
+body[dir="rtl"] .prose h1,
+body[dir="rtl"] .prose h2,
+body[dir="rtl"] .prose h3,
+body[dir="rtl"] .prose h4,
+body[dir="rtl"] .prose li,
+body[dir="rtl"] .prose dt,
+body[dir="rtl"] .prose dd,
+body[dir="rtl"] .prose blockquote,
+body[dir="rtl"] .prose blockquote p,
+body[dir="rtl"] .prose td,
+body[dir="rtl"] .prose th,
+body[dir="rtl"] .prose figcaption,
+body[dir="rtl"] .prose info-hint,
+body[dir="rtl"] .prose warning-hint,
+body[dir="rtl"] .prose success-hint,
+body[dir="rtl"] .prose danger-hint {
+  unicode-bidi: plaintext;
+}
+
+/* A list marker is painted by the list container at its inline-start edge, so
+   it would stay pinned to the right while `plaintext` moved a Chinese or
+   English item's text to the left — the bullet would sit at the opposite end of
+   the line from the words it belongs to. Pulling the marker inside the line box
+   makes it travel with the item's own resolved direction instead.
+
+   `inside` alone would then push the first line in by the marker's width while
+   the wrapped lines stayed put. The negative `text-indent` cancels that, so the
+   marker hangs in the indent instead of displacing the text, and every line of
+   the item starts at the same x — the same hanging indent the outside marker
+   gives in the LTR locales. `text-indent` is inherited, so direct children of a
+   loose list item (`<li><p>…</p></li>`) reset it. Scoped to RTL: the ten LTR
+   locales keep their existing marker and geometry untouched. */
+body[dir="rtl"] .prose ul,
+body[dir="rtl"] .prose ol {
+  list-style-position: inside;
+  padding-inline-start: 0;
+}
+
+body[dir="rtl"] .prose li {
+  padding-inline-start: 1.35em;
+  text-indent: -1.35em;
+}
+
+body[dir="rtl"] .prose li > * {
+  text-indent: 0;
+}
+
 /* The stamp hangs off the prose column's end edge; in RTL that is the left
    side, which is also where the archive mark reads, so it must not inherit a
    mirrored inset that pushes it over the title. */
