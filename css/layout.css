@@ -537,7 +537,9 @@ body:not([data-script]):lang(en) .blog-subtitle {
 .toc-inline a { color: inherit; text-decoration: none; }
 .toc-inline a:hover { color: var(--seal); }
 
-@media (max-width: 1339px) {
+/* matches the marginalia collapse breakpoint in the responsive block below:
+   under it the in-panel TOC takes over */
+@media (max-width: 1360px) {
   .toc-inline { display: block; }
 }
 
@@ -752,11 +754,14 @@ body[data-mode="night"] .footer-brand a {
 
 /* ——— responsive ——— */
 
-@media (max-width: 1339px) {
+@media (max-width: 1360px) {
   /* Below this width the outer gutter can no longer hold a readable note (the
      sheet alone is --panel-max, so anything narrower leaves the note column
      under ~8rem). Collapse to the single centred sheet the index route uses;
-     the panel keeps its full width, so text does not re-wrap on navigation. */
+     the panel keeps its full width, so text does not re-wrap on navigation.
+     1360 rather than 1339: with a 15px scrollbar a 1340px window leaves
+     clientWidth 1325px, where long titles like MARGINALIEN made the note 121px
+     and pushed scrollWidth to 1327px — a 2px horizontal overflow. */
   .article-layout {
     display: block;
     max-width: var(--panel-max);
