@@ -35,7 +35,12 @@
   --info: #565F6A;
 
   --grid-dot: rgba(21, 20, 15, 0.06);
-  --veil: rgba(21, 20, 15, 0.72);
+  /* Day wall scrim. This was a dark veil (rgba(21,20,15,.72)), which turned a
+     wall-image site into dark grey-brown while --on-wall stayed near-black —
+     dark text on a darkened photo, unreadable. A warm paper scrim keeps the
+     wall pale in light mode so the same ink stays readable over any image.
+     Night keeps its own near-black veil below. */
+  --veil: rgba(237, 234, 224, 0.82);
 
   /* lateral feathering: the sheet dissolves into the desk instead of being cut */
   --edge-veil: rgba(237, 234, 224, 0.9);
