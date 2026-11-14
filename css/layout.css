@@ -838,3 +838,21 @@ body[data-mode="night"] .footer-brand a {
     animation: none;
   }
 }
+
+/* ——— touch ergonomics ——— */
+
+@media (pointer: coarse) {
+  /* Finger-sized targets: the masthead and viewer controls sit at 2.1rem
+     (~34px), well under the ~44px comfort mark. Size and padding only — the
+     hover/press transforms elsewhere stay untouched. */
+  .icon-btn,
+  .overlay-close,
+  .viewer-close,
+  .back-to-top {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+  .masthead-nav a {
+    padding: 0.4rem 0;
+  }
+}
