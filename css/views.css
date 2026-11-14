@@ -362,7 +362,7 @@ body[data-mode="night"] .lead {
 /* ——— home ledger ——— */
 
 .entry-list {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--rule-strong);
 }
 
 .entry {
@@ -684,7 +684,7 @@ body:not([data-script]):lang(en) .article-dek {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   margin: 1.9rem 0 0;
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--rule-strong);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -814,7 +814,7 @@ body:not([data-script]):lang(en) .article-dek {
   max-width: var(--measure);
   margin: 3rem auto 0;
   padding-top: 1.3rem;
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--rule-strong);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem 2rem;
@@ -933,7 +933,7 @@ body:not([data-script]):lang(en) .article-dek {
   gap: 0.9rem;
   margin: 2.4rem 0 0.5rem;
   padding-bottom: 0.45rem;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--rule-strong);
 }
 
 .archive-year-roman {
@@ -1176,7 +1176,7 @@ body:not([data-script]):lang(en) .article-dek {
   background: var(--panel);
   color: var(--ink);
   border: 1px solid var(--rule-2);
-  border-top: 2px solid var(--ink);
+  border-top: 2px solid var(--rule-strong);
   box-shadow: var(--shadow-panel);
 }
 
@@ -1201,7 +1201,7 @@ body:not([data-script]):lang(en) .article-dek {
 .search-input {
   width: 100%;
   border: 0;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--rule-strong);
   background: transparent;
   padding: 0.5rem 0 0.7rem;
   font-family: var(--font-serif);

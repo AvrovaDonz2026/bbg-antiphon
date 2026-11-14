@@ -357,7 +357,7 @@ body[dir="rtl"] .password-submit::after {
 
 @keyframes rule-arrive {
   from { border-bottom-color: transparent; }
-  to { border-bottom-color: var(--ink); }
+  to { border-bottom-color: var(--rule-strong); }
 }
 
 #search-overlay .search-input {
@@ -656,6 +656,6 @@ body[data-light="off"] .led { animation-play-state: paused; }
   }
 
   #search-overlay .search-input {
-    border-bottom-color: var(--ink) !important;
+    border-bottom-color: var(--rule-strong) !important;
   }
 }

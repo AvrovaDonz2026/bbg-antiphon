@@ -41,7 +41,10 @@ body.has-wall-image {
   flex-wrap: wrap;
   gap: 0.8rem 1.5rem;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid var(--on-wall);
+  /* Same rule token as .masthead-nav below: one mechanism for the header's
+     three hairlines. --on-wall (#15140F on a pale wall) painted a hard black
+     bar next to the nav's pale beige line. */
+  border-bottom: 1px solid var(--wall-rule);
 }
 
 .sys-line {
@@ -214,8 +217,9 @@ body:not([data-script]):lang(en) .blog-subtitle {
   align-items: center;
   gap: 0.35rem 1.75rem;
   padding: 0.85rem 0;
+  /* Matches .masthead-top above — the header's ruled zone is one token. */
   border-top: 1px solid var(--wall-rule);
-  border-bottom: 1px solid var(--on-wall);
+  border-bottom: 1px solid var(--wall-rule);
   font-family: var(--font-mono);
   font-size: 0.66rem;
   letter-spacing: 0.18em;

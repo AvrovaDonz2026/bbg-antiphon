@@ -17,8 +17,13 @@
   --ink-2: #3D3931;
   --muted: #726C5E;
 
-  --rule: #DAD3C2;
+    --rule: #DAD3C2;
   --rule-2: #C4BBA6;
+  /* The "hard" rule for document-head delimiters (entry-list top, catalog
+     frame, prev/next, archive years, search field). Same ink in day mode;
+     night gets a warm dark tone instead of --ink's bright paper colour, so
+     these long lines stop reading as luminous bars after dark. */
+  --rule-strong: #15140F;
 
   --signal: #C2663C;
   --signal-led: #D97757;
@@ -146,6 +151,7 @@ body[data-mode="night"] {
 
   --rule: #2A2620;
   --rule-2: #3A342C;
+  --rule-strong: #4A4338;
 
   --signal: #D2764F;
   --signal-led: #E08C6B;
