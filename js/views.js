@@ -350,6 +350,17 @@ window.Antiphon = window.Antiphon || {};
         bottomHtml = A.esc(bottomText);
       }
     }
+    /* The theme's auto © line and the authored 底部信息 both speak for the
+       site's owner, so an author who writes their own © / copyright / 版权
+       line in 底部信息 ends up with the year printed twice a few pixels
+       apart. The authored copy wins: when it already carries a copyright
+       marker, the generated line stays home. (The raw text is scanned, not
+       the parsed HTML, so a marker inside a markdown link or emphasis still
+       counts.) */
+    var authoredCopyright = /©|copyright|版权/i.test(bottomText);
+    var licenseLine = authoredCopyright
+      ? ""
+      : '<p class="footer-license">© ' + year + " " + A.esc(V.siteName()) + (license ? " · " + A.esc(license) : "") + "</p>";
     var atom =
       String(blog["网站域名（包括https://）"] || "").trim() !== ""
         ? '<p class="footer-brand"><a href="./atom.xml">' + A.esc(A.t("ATOM_FEED")) + "</a></p>"
@@ -360,7 +371,7 @@ window.Antiphon = window.Antiphon || {};
       '<div class="footer-inner">' +
       '<div class="footer-grid">' +
       '<p class="footer-brand footer-colophon">' + V.sigil(13) + "<span>" + A.esc(A.t("COLOPHON")) + "</span></p>" +
-      '<p class="footer-license">© ' + year + " " + A.esc(V.siteName()) + (license ? " · " + A.esc(license) : "") + "</p>" +
+      licenseLine +
       '<p class="footer-brand">ANNO ' + A.roman(year) + "</p>" +
       (showVisitor && A.visitor ? '<p class="visitor">' + A.esc(A.t("VISITOR", { id: A.visitor })) + "</p>" : "") +
       '<p class="footer-brand">' + A.esc(A.t("FOOTER_CREDIT")) + "</p>" +
