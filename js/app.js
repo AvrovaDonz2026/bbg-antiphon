@@ -911,9 +911,12 @@ window.Antiphon = window.Antiphon || {};
     applyMode();
     applyFont(A.getFont());
     ensureVisitor();
+    /* initLight() runs before the shell renders: the footer reads the WebGL
+       state at paint time, so a shell built first would print "LUX OFF" even
+       on a GL-capable browser until the next toggle. */
+    initLight();
     A.views.renderShell();
     bindShell();
-    initLight();
 
     A.ensureMarked()
       .then(function () { A.views.renderFooter(); })
