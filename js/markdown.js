@@ -38,10 +38,14 @@ window.Antiphon = window.Antiphon || {};
   }
 
   M.render = async function (text, baseurl) {
-    await A.ensureMarked();
-    configure();
-    currentBaseurl = baseurl || "./";
     try {
+      /* Loading and configuring marked can itself fail — a blocked CDN leaves
+         window.marked undefined and A.ensureMarked() rejects. These calls
+         therefore live inside the same try as parse(), so the plain-text
+         fallback below still runs and the article body is never lost. */
+      await A.ensureMarked();
+      configure();
+      currentBaseurl = baseurl || "./";
       return window.marked.parse(text);
     } catch (error) {
       console.error("[Antiphon] Markdown 渲染失败：", error);
