@@ -42,6 +42,8 @@
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* legacy eyebrow kept for overlays */
@@ -1414,14 +1416,21 @@ body:not([data-script]):lang(en) .article-dek {
   }
 }
 
+/* Between 641px and 768px the section head still has room for the meta line's
+   grid track but not for its nowrap date range, which bleeds up to ~49px past
+   the sheet's right edge — so the meta stays hidden across the whole tablet
+   band, not just on phones. */
+@media (max-width: 768px) {
+  .sec-head-meta {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
   .stamp { display: none; }
   .article-kicker { padding-inline-end: 0; }
   .sec-head {
     grid-template-columns: auto minmax(0, 1fr);
-  }
-  .sec-head-meta {
-    display: none;
   }
   .entry {
     grid-template-columns: 1fr;
