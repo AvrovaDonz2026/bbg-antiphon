@@ -639,29 +639,13 @@ window.Antiphon = window.Antiphon || {};
     return '<div class="article-catalog">' + cells.join("") + "</div>";
   };
 
-  /* The read-time line. Dates already live in the catalog card above, so this
-     carries only the one fact the catalog cannot: how long the piece takes.
-     阅读.显示阅读时长 (true by default) hides it for owners who would rather
-     not claim a number, and an encrypted article has no readable body to time.
-
-     Both this and the catalog's extent cell are re-rendered from the decrypted
-     plaintext by V.bindPassword once the reader unlocks an article: before
-     decryption there is no body to measure, and the pre-unlock markup
-     deliberately omits the extent. `refresh` rewrites the two nodes in place
-     rather than repainting the header, so the stamp, kicker and title keep
-     their motion state and the scroll position does not jump. */
-  V.articleMeta = function (article, minutes, encrypted) {
-    if (encrypted) return "";
-    if (A.getCfg("阅读.显示阅读时长", true) === false) return "";
-    var count = Number(minutes);
-    if (!isFinite(count) || count <= 0) return "";
-    return (
-      '<div class="article-meta">' +
-      "<span>" + A.esc(A.t("READ_TIME", { n: A.num(count) })) + "</span>" +
-      "</div>"
-    );
-  };
-
+  /* The read-time line used to live here as .article-meta, but the catalog
+     card directly above already prints the same fact as its 篇幅/extent cell
+     (CAT_EXTENT), so the header printed the reading time twice. The line is
+     gone; the extent cell is the single home for it, and 阅读.显示阅读时长
+     keeps governing that cell through V.articleCatalog. An encrypted article
+     still renders no extent at all until decryption, when V.bindPassword's
+     refresh rewrites the catalog from the plaintext in place. */
   V.refreshArticleStats = function (main, article, minutes, sectionCount) {
     var catalog = main.querySelector(".article-catalog");
     if (catalog) {
@@ -672,23 +656,6 @@ window.Antiphon = window.Antiphon || {};
         var next = wrapper.firstElementChild;
         if (next) catalog.parentNode.replaceChild(next, catalog);
       }
-    }
-    var meta = main.querySelector(".article-meta");
-    var freshMeta = V.articleMeta(article, minutes, false);
-    if (freshMeta) {
-      if (meta) {
-        var metaWrap = document.createElement("div");
-        metaWrap.innerHTML = freshMeta;
-        meta.parentNode.replaceChild(metaWrap.firstElementChild, meta);
-      } else {
-        var anchor = main.querySelector(".article-catalog");
-        if (anchor) anchor.parentNode.insertBefore(
-          (function () { var w = document.createElement("div"); w.innerHTML = freshMeta; return w.firstElementChild; })(),
-          anchor.nextSibling
-        );
-      }
-    } else if (meta) {
-      meta.parentNode.removeChild(meta);
     }
   };
 
@@ -859,9 +826,9 @@ window.Antiphon = window.Antiphon || {};
       list.appendChild(item);
     });
     details.appendChild(list);
-    /* Placed after the catalog/meta block so it reads as part of the header
-       apparatus rather than splitting the extent line from the card above it. */
-    var anchorNode = main.querySelector(".article-meta") || main.querySelector(".article-catalog");
+    /* Placed after the catalog card so it reads as part of the header
+       apparatus rather than splitting the extent cell from the card above it. */
+    var anchorNode = main.querySelector(".article-catalog");
     if (anchorNode && anchorNode.parentNode) anchorNode.parentNode.insertBefore(details, anchorNode.nextSibling);
     else {
       var header = main.querySelector(".article-header");
@@ -1034,7 +1001,6 @@ window.Antiphon = window.Antiphon || {};
       '<h1 class="article-title">' + A.esc(article.title) + "</h1>" +
       (article.excerpt ? '<p class="article-dek">' + A.esc(article.excerpt) + "</p>" : "") +
       V.articleCatalog(article, minutes, article.encrypted, sectionCount) +
-      V.articleMeta(article, minutes, article.encrypted) +
       V.ornament() +
       "</header>" +
       bodyHtml +
