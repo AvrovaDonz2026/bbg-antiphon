@@ -391,6 +391,170 @@ body[dir="rtl"] .motion-reveal .archive-year-line {
   animation: reveal 460ms var(--ease) both;
 }
 
+/* ——— quiet spectacle · the second printing pass ———
+   Scroll timelines are enhancement only; all text rests fully visible. */
+
+/* 1 · vertical rules register against the viewport, from the head of the sheet */
+@keyframes edge-register {
+  from { transform: scaleY(0.06); opacity: 0.08; }
+  to { transform: scaleY(1); opacity: 0.55; }
+}
+
+@supports (animation-timeline: view()) {
+  .motion-reveal .panel-edge {
+    transform-origin: top;
+    animation: edge-register linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 65%;
+  }
+}
+
+/* 2 · ink settles into the heading without ever disappearing.
+   Above-fold headings finish on mount; prose headings register as they enter. */
+@keyframes ink-settle {
+  from {
+    clip-path: inset(-0.15em calc(100% - 12px) -0.15em 0);
+    opacity: 0.35;
+    transform: translateX(-10px);
+  }
+  to { clip-path: inset(-0.15em 0); opacity: 1; transform: none; }
+}
+
+.motion-reveal .article-title,
+.motion-reveal .sec-head-title {
+  animation: ink-settle 780ms var(--ease) 70ms both;
+}
+
+@supports (animation-timeline: view()) {
+  .motion-reveal .prose h2,
+  .motion-reveal .prose h3 {
+    animation: ink-settle linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 55%;
+  }
+}
+
+/* 3 · catalog cells arrive as records being collated, not a card cascade */
+@keyframes register-row {
+  from { opacity: calc(var(--row-opacity, 1) * 0.35); transform: translateY(8px); }
+  to { opacity: var(--row-opacity, 1); transform: none; }
+}
+
+.motion-reveal .catalog-cell { animation: register-row 520ms var(--ease) 160ms both; }
+
+.motion-reveal .catalog-cell:nth-child(2) { animation-delay: 215ms; }
+.motion-reveal .catalog-cell:nth-child(3) { animation-delay: 270ms; }
+.motion-reveal .catalog-cell:nth-child(4) { animation-delay: 325ms; }
+.motion-reveal .catalog-cell:nth-child(n + 5) { animation-delay: 380ms; }
+
+/* 4 · marginal notes assemble quietly alongside the registered folio */
+.motion-reveal .marginalia a {
+  --row-opacity: 1; animation: register-row 480ms var(--ease) both;
+}
+
+.motion-reveal .marginalia a:nth-of-type(1) { animation-delay: 220ms; }
+.motion-reveal .marginalia a:nth-of-type(2) { animation-delay: 265ms; }
+.motion-reveal .marginalia a:nth-of-type(3) { animation-delay: 310ms; }
+.motion-reveal .marginalia a:nth-of-type(4) { animation-delay: 355ms; }
+.motion-reveal .marginalia a:nth-of-type(5) { animation-delay: 400ms; }
+.motion-reveal .marginalia a:nth-of-type(n + 6) { animation-delay: 445ms; }
+.motion-reveal .marginalia a.is-sub { --row-opacity: 0.85; }
+.motion-reveal .toc-inline li { animation: register-row 480ms var(--ease) 220ms both; }
+.motion-reveal .toc-inline li.is-sub { --row-opacity: 0.85; }
+
+/* 5 · a folio number aligns to its baseline by half a pixel */
+@keyframes folio-tick {
+  from { opacity: 0.5; transform: translateY(-0.5px); }
+  to { opacity: 1; transform: none; }
+}
+
+.motion-reveal .file-no,
+.motion-reveal .sec-head-meta {
+  animation: folio-tick 700ms var(--ease) 180ms both;
+}
+
+/* The tiny baseline is drawn once, then remains part of the printed folio. */
+.file-no { position: relative; display: inline-block; }
+.file-no::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -3px;
+  height: 1px;
+  background: var(--seal);
+  opacity: 0.45;
+  transform-origin: inline-start;
+  pointer-events: none;
+}
+.motion-reveal .file-no::after { animation: draw-rule 700ms var(--ease) 220ms both; }
+
+/* 6 · one restrained pass along the top edge marks a newly mounted route */
+@keyframes route-register {
+  from { opacity: 0.25; transform: scaleX(0.08); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.motion-reveal .panel-top {
+  transform-origin: inline-start;
+  animation: route-register 860ms var(--ease) both;
+}
+
+/* 7 · the seal is pressed once, preserving its original printed rotation */
+@keyframes seal-press {
+  from { scale: 1.004; border-color: var(--rule-2); }
+  to { scale: 1; border-color: var(--seal); }
+}
+
+.motion-reveal .stamp {
+  transform-origin: center; animation: seal-press 700ms var(--ease) 260ms both;
+}
+
+/* 8 · a separate veil drifts without changing light.css's on/off opacity. */
+#light-fallback::after {
+  content: "";
+  position: absolute;
+  inset: -3%;
+  background: radial-gradient(ellipse at 36% 30%, var(--signal), transparent 68%);
+  opacity: 0.012;
+  pointer-events: none;
+}
+
+body:not([data-light="on"]) #light-fallback::after { content: none; }
+
+@keyframes light-drift {
+  from { opacity: 0.008; transform: translate3d(-0.5%, -0.35%, 0); }
+  to { opacity: 0.02; transform: translate3d(1.5%, 1%, 0); }
+}
+
+/* A single LUX clock: the old deep pulse becomes a nearly still live signal. */
+.led { animation: lux-breathe 6s ease-in-out infinite; }
+body[data-light="off"] .led { animation-play-state: paused; }
+
+@keyframes lux-breathe {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+/* Keep full-viewport drift on desktop; touch hairlines never depend on hover. */
+@media (min-width: 861px) {
+  body[data-light="on"] #light-fallback::after { animation: light-drift 32s linear infinite alternate; }
+  .panel::after { animation: grain-drift 36s linear infinite alternate; }
+}
+
+@keyframes grain-drift {
+  from { opacity: 0.04; transform: scale(1.02) translate3d(-0.4%, 0.3%, 0); }
+  to { opacity: 0.045; transform: scale(1.02) translate3d(0.4%, -0.3%, 0); }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .entry::after,
+  .tag-link::after,
+  .password-submit::after {
+    transform: scaleX(1) !important;
+    opacity: 0.28 !important;
+  }
+}
+
 /* ——— reduced motion ———
    One block. Everything decorative returns to its resting state, and nothing
    holding content is left invisible. Typography is deliberately excluded: the
@@ -413,11 +577,47 @@ body[dir="rtl"] .motion-reveal .archive-year-line {
   #search-overlay .search-sheet,
   #search-overlay .search-input,
   #back-to-top:not([hidden]),
-  .signal-divider .node {
+  .panel-edge,
+  .motion-reveal .article-title,
+  .motion-reveal .sec-head-title,
+  .motion-reveal .catalog-cell,
+  .motion-reveal .marginalia a,
+  .motion-reveal .toc-inline li,
+  .motion-reveal .file-no,
+  .motion-reveal .sec-head-meta,
+  .motion-reveal .panel-top,
+  .motion-reveal .stamp,
+  .led,
+  .signal-divider .node,
+  .motion-reveal .prose h2,
+  .motion-reveal .prose h3,
+  .panel::after {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
+
+  /* preserve the printed seal's resting rotation while cancelling its press */
+  .motion-reveal .stamp {
+    opacity: 0.82 !important;
+    transform: rotate(-2.4deg) !important;
+    scale: 1 !important;
+    border-color: var(--seal) !important;
+  }
+
+  /* pseudo-element decoration has its own resting geometry; never a hidden
+     title, a half-drawn folio, or a parked scroll timeline */
+  .motion-reveal .article-title,
+  .motion-reveal .sec-head-title,
+  .motion-reveal .prose h2,
+  .motion-reveal .prose h3 { clip-path: none !important; }
+  .motion-reveal .file-no::after {
+    animation: none !important;
+    opacity: 0.45 !important;
+    transform: scaleX(1) !important;
+  }
+  .panel::after { opacity: 0.045 !important; }
+  #light-fallback::after { content: none !important; animation: none !important; }
 
   /* these arrive purely through border colour, so opacity/transform would
      change nothing: the animation must simply not run */
