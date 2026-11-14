@@ -785,6 +785,16 @@ window.Antiphon = window.Antiphon || {};
      of one heading list, so they are built together and share the click and
      scroll-spy behaviour. Both are appended by the caller into the layout. */
   V.buildToc = function (main) {
+    /* Disconnect the previous route's scroll-spy before anything else: #main
+       is reused across routes, so a TOC-capable article followed by a view
+       without one (or with fewer than three headings) left the old observer
+       watching detached headings. watchHeadings() re-disconnects when it takes
+       over, and closeOverlays() has no DOM signal for "leaving an article",
+       so this is the one point every article render passes through. */
+    if (tocObserver) {
+      tocObserver.disconnect();
+      tocObserver = null;
+    }
     if (A.getCfg("外观.显示页边目录", true) === false) return;
     var layout = main.querySelector(".article-layout");
     if (!layout) return;
@@ -1038,6 +1048,11 @@ window.Antiphon = window.Antiphon || {};
       title: article.title,
       html: '<div class="article-layout">' + V.panel(inner, { classification: A.t("CLASSIFIED"), fileNo: fileNo }) + "</div>",
       after: async function (main) {
+        /* Bound before the encrypted early-return: the action row (copy link,
+           share) exists on the sealed card too, and binding only after unlock
+           left it inert until the password landed. bindPassword() rebinds the
+           row against the revealed body. */
+        V.bindActions(main);
         if (article.encrypted) {
           V.bindPassword(main, article, raw, baseurl);
           return;
