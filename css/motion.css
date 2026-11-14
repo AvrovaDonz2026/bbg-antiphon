@@ -229,6 +229,168 @@ body[data-script="arabic"] #masthead::after {
   animation: status-in 520ms var(--ease) both;
 }
 
+/* ——— plate arrival: figures in prose ———
+   Images are plates in a filed document, so they arrive on a second beat after
+   the body sheet has settled, and a mounting rule closes each plate. The rule
+   is absolutely positioned inside the figure's own margin, so its resting
+   state costs no layout: it is pure decoration that happens to stay. */
+
+.prose .prose-figure {
+  position: relative;
+}
+
+.prose .prose-figure::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--rule);
+  transform: scaleX(1);
+  transform-origin: left;
+  pointer-events: none;
+}
+
+body[dir="rtl"] .prose .prose-figure::after {
+  transform-origin: right;
+}
+
+.motion-reveal .prose .prose-figure {
+  animation: reveal 460ms var(--ease) 300ms both;
+}
+
+.motion-reveal .prose .prose-figure::after {
+  animation: draw-rule 620ms var(--ease) 340ms both;
+}
+
+/* ——— quote: the clay rule arrives ———
+   The blockquote's left rule fades in after its text has settled underneath
+   the body reveal. The text itself never moves — only the rule arrives. The
+   border side is logical, so an Arabic quote grows its rule from the right
+   without a mirrored keyframe. */
+
+@keyframes quote-rule {
+  from { border-inline-start-color: transparent; }
+  to { border-inline-start-color: var(--signal); }
+}
+
+.motion-reveal .prose blockquote {
+  animation: quote-rule 560ms var(--ease) 320ms both;
+}
+
+/* ——— tags and the password submit share the entry gesture ———
+   The same clay hairline that fills under a ledger row fills under a tag on
+   hover: one gesture, three surfaces. The static border yields while the fill
+   draws over it, so the line reads as redrawn rather than doubled. These are
+   hover states, not loops — at rest both sit at scaleX(0) and the underlying
+   borders are exactly what views.css paints. */
+
+.tag-link,
+.password-submit {
+  position: relative;
+}
+
+.tag-link::after,
+.password-submit::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 1px;
+  background: var(--signal);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+  transition:
+    transform var(--dur-slow) var(--ease),
+    opacity var(--dur) var(--ease);
+  pointer-events: none;
+}
+
+body[dir="rtl"] .tag-link::after,
+body[dir="rtl"] .password-submit::after {
+  transform-origin: right;
+}
+
+.tag-link:hover::after,
+.tag-link:focus-visible::after,
+.password-submit:hover::after,
+.password-submit:focus-visible::after {
+  transform: scaleX(1);
+  opacity: 0.55;
+}
+
+.tag-link:hover,
+.tag-link:focus-visible,
+.password-submit:hover,
+.password-submit:focus-visible {
+  border-bottom-color: transparent;
+}
+
+/* ——— unlock: the revealed body settles deeper ———
+   bindPassword marks .article-body with .is-unlocked once the plaintext has
+   replaced the sealed blob; changing the animation-name restarts the reveal
+   with a deeper lift on the same curve. No timers, no JS state beyond the
+   one class. */
+
+@keyframes reveal-deep {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.motion-reveal .article-body.is-unlocked {
+  animation: reveal-deep 600ms var(--ease) both;
+}
+
+/* ——— search overlay: the sheet is laid down ———
+   The veil is already there; the sheet itself arrives with the reading lift,
+   and the input's rule fades in on the status-strip rhythm so the field reads
+   as ruled before the first result lands. Both replay on every open because
+   the overlay is display:none between uses. Result rows are deliberately not
+   animated: V.renderSearch rewrites them on every keystroke, and a stagger
+   there would flicker while typing. */
+
+#search-overlay .search-sheet {
+  animation: reveal 460ms var(--ease) both;
+}
+
+@keyframes rule-arrive {
+  from { border-bottom-color: transparent; }
+  to { border-bottom-color: var(--ink); }
+}
+
+#search-overlay .search-input {
+  animation: rule-arrive 520ms var(--ease) 120ms both;
+}
+
+/* ——— archive years: the section head's two beats ———
+   The year line draws from the inline-start edge like .sec-head-rule, and the
+   mono count settles its tracking like .panel-status. Same durations, so the
+   archive speaks the same sentence as every other ruled head. */
+
+.motion-reveal .archive-year-line {
+  transform-origin: left;
+  animation: draw-rule 620ms var(--ease) 120ms both;
+}
+
+body[dir="rtl"] .motion-reveal .archive-year-line {
+  transform-origin: right;
+}
+
+.motion-reveal .archive-year-arabic {
+  animation: status-in 520ms var(--ease) both;
+}
+
+/* ——— back to top: arrives with the sheet, not before it ———
+   The button is toggled with the hidden attribute (a display flip), so a
+   transition cannot run; an animation keyed to :not([hidden]) fires exactly
+   when it is summoned past a viewport and a half. */
+
+#back-to-top:not([hidden]) {
+  animation: reveal 460ms var(--ease) both;
+}
+
 /* ——— reduced motion ———
    One block. Everything decorative returns to its resting state, and nothing
    holding content is left invisible. Typography is deliberately excluded: the
@@ -244,10 +406,23 @@ body[data-script="arabic"] #masthead::after {
   .motion-reveal .article-body,
   .motion-reveal .sec-head-rule,
   .motion-reveal .panel-status,
+  .motion-reveal .prose .prose-figure,
+  .motion-reveal .prose blockquote,
+  .motion-reveal .archive-year-line,
+  .motion-reveal .archive-year-arabic,
+  #search-overlay .search-sheet,
+  #search-overlay .search-input,
+  #back-to-top:not([hidden]),
   .signal-divider .node {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  /* these arrive purely through border colour, so opacity/transform would
+     change nothing: the animation must simply not run */
+  .motion-reveal .prose .prose-figure::after {
+    animation: none !important;
   }
 
   /* the sweep is pure decoration with no resting state of its own: hide it
@@ -261,7 +436,26 @@ body[data-script="arabic"] #masthead::after {
   .entry::after,
   .entry-no,
   .entry-side,
+  .tag-link,
+  .password-submit,
   .prose a {
     transition: none !important;
+  }
+
+  /* hover fills rest at scaleX(0); with transitions killed they can never
+     creep in, but the rest state is declared anyway so the reduce sheet is
+     self-evidently final */
+  .tag-link::after,
+  .password-submit::after {
+    transform: scaleX(0) !important;
+    opacity: 0 !important;
+  }
+
+  .motion-reveal .prose blockquote {
+    border-inline-start-color: var(--signal) !important;
+  }
+
+  #search-overlay .search-input {
+    border-bottom-color: var(--ink) !important;
   }
 }

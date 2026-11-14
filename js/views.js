@@ -934,6 +934,10 @@ window.Antiphon = window.Antiphon || {};
         var body = await A.markdown.render(plain, baseurl);
         var holder = main.querySelector(".article-body");
         holder.innerHTML = '<div class="prose" id="article-prose">' + body + "</div>";
+        /* Marks the revealed sheet for css/motion.css: the unlock reveal is a
+           deeper lift on the same curve, so the reader feels the seal come
+           off. Class-only — no timers, no extra state. */
+        holder.classList.add("is-unlocked");
         await A.markdown.postProcess(holder.querySelector(".prose"));
         /* The header card was rendered against the ciphertext, so its extent
            and section count describe the sealed blob, not the article. They
