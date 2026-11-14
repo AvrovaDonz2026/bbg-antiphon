@@ -61,19 +61,26 @@
 .signal-divider {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.8rem;
   margin: 1.8rem 0;
 }
 
+/* Each rule runs from its outer end toward the central node: it starts as the
+   rule tone at the outer edge and dissolves before reaching the dot. (The
+   gradients used to run the other way — rule beside the dot, empty outside —
+   which read as two short dashes floating off-centre.) min-width keeps a
+   usable stroke in narrow containers where flexing could starve the lines. */
 .signal-divider .line {
   display: block;
   height: 1px;
-  width: min(8rem, 30%);
-  background: linear-gradient(90deg, var(--rule), transparent);
+  flex: 1;
+  min-width: 2rem;
+  background: linear-gradient(90deg, transparent, var(--rule));
 }
 
 .signal-divider .line--right {
-  background: linear-gradient(270deg, var(--rule), transparent);
+  background: linear-gradient(270deg, transparent, var(--rule));
 }
 
 .signal-divider .node {
