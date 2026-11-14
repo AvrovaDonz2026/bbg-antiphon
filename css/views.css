@@ -1199,9 +1199,13 @@ body:not([data-script]):lang(en) .article-dek {
   background: transparent;
   padding: 0.5rem 0 0.7rem;
   font-family: var(--font-serif);
-  font-size: 1.6rem;
+  /* Fixed 1.6rem clips the longer en/ar/de/ru placeholders at 390px (and zh at
+     320px); the clamp shrinks with the viewport so the query text never starts
+     off-sheet. */
+  font-size: clamp(1.05rem, 4.2vw, 1.6rem);
   color: var(--ink);
   outline: none;
+  text-overflow: ellipsis;
 }
 
 .search-input::placeholder {
