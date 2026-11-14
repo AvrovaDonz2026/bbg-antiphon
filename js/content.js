@@ -281,7 +281,7 @@ window.Antiphon = window.Antiphon || {};
     var out = Object.assign({}, article);
     if (hit["文章标题"]) out.title = String(hit["文章标题"]);
     if (hit["摘要"] !== undefined) out.excerpt = String(hit["摘要"]);
-    if (Array.isArray(hit["标签"])) out.tags = hit["标签"].map(String);
+    if (hit["标签"] !== undefined) out.tags = A.splitTags ? A.splitTags(hit["标签"]) : hit["标签"];
     return out;
   };
 

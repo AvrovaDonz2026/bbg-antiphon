@@ -88,10 +88,7 @@ window.Antiphon = window.Antiphon || {};
     if (!raw || typeof raw !== "object") return null;
     var filename = String(raw["文件名"] || "").trim();
     if (!filename) return null;
-    var tags = Array.isArray(raw["标签"]) ? raw["标签"] : [];
-    tags = tags
-      .map(function (tag) { return String(tag == null ? "" : tag).trim(); })
-      .filter(function (tag) { return tag !== ""; });
+    var tags = A.splitTags(raw["标签"]);
     return {
       index: index,
       title: String(raw["文章标题"] || filename),
@@ -360,6 +357,33 @@ window.Antiphon = window.Antiphon || {};
 
   A.pageUrl = function (filename) {
     return "./data/pages/" + encodeURIComponent(filename);
+  };
+
+  /* Tag normalisation. An author typing 标签 in the BBG panel often writes a
+     comma-separated string ("Mumbling,communication") where the schema wants a
+     list, and with a Chinese IME the comma is fullwidth (，) — the theme then
+     showed one giant tag with both words glued together. String values are
+     split on ASCII and fullwidth commas, and an em-dash-style enumeration
+     ("、") is honoured the same way; whitespace-only fragments are dropped;
+     duplicate names collapse so the kicker prints one link, not two. A
+     genuine array passes through this same trim, so array entries benefit
+     from the same hygiene. Everything is canonicalised here (and only here),
+     so the tag index, tag route and search all see the same tags. */
+  A.splitTags = function (value) {
+    var list = Array.isArray(value) ? value : [value];
+    var seen = {};
+    var out = [];
+    list.forEach(function (entry) {
+      String(entry == null ? "" : entry)
+        .split(/[,，、]/)
+        .forEach(function (part) {
+          var tag = part.trim();
+          if (tag === "" || seen[tag]) return;
+          seen[tag] = true;
+          out.push(tag);
+        });
+    });
+    return out;
   };
 
   A.esc = function (value) {
