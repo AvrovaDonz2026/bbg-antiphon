@@ -13,7 +13,18 @@
 # Pages workflow runs it, so the published demo is always built from source and
 # never from a stale copy.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Resolve the repo root through symlinks, and independently of $PWD. A relative
+# invocation (`bash tools/make-demo.sh`) resolves `$0` against the caller's cwd,
+# which non-interactive startup files (`BASH_ENV`, CI wrappers) can change; and
+# `$0` is the link itself when the script is run through one. `dirname "$0"/..`
+# alone gets both cases wrong. Walking the link chain with `cd -P` fixes both.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+ROOT="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
 cd "$ROOT"
 
 OUT="${1:-demo}"

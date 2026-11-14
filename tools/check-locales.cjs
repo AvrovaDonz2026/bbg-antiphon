@@ -1,8 +1,26 @@
 // Locale regression check: every locale × every route, reporting interface
 // strings still in a foreign script. Run against a preview server:
 //   node tools/check-locales.cjs http://127.0.0.1:8775/index.html
-const { spawn } = require("child_process");
-const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const { spawn, spawnSync } = require("child_process");
+const fs = require("fs");
+
+/* Find a Chrome binary across platforms. CHROME_PATH wins when set; then the
+   standard macOS bundle; then the common Linux names, accepted only when they
+   resolve on PATH (which keeps a missing binary from surfacing later as an
+   opaque spawn ENOENT). */
+function resolveChrome() {
+  if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
+  const macPath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  if (process.platform === "darwin" && fs.existsSync(macPath)) return macPath;
+  if (process.platform !== "win32") {
+    for (const name of ["google-chrome", "chromium", "chromium-browser"]) {
+      const probe = spawnSync("which", [name], { encoding: "utf8" });
+      if (probe.status === 0 && probe.stdout) return probe.stdout.trim();
+    }
+  }
+  return macPath;
+}
+const CHROME = resolveChrome();
 const PORT = Number(process.env.PROBE_PORT || 9410);
 const BASE = process.argv[2] || "http://127.0.0.1:8775/index.html";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
