@@ -601,7 +601,9 @@ body[data-script="latin"] .lead-title {
   align-items: baseline;
   gap: 0.4rem 1rem;
   margin-bottom: 1.15rem;
-  padding-inline-end: 6rem;
+  /* 7.2rem clears the widest stamp ('CLASSIFICADO' in pt reaches ~116px) with
+     the rotated stamp still clear of the kicker text. */
+  padding-inline-end: 7.2rem;
   font-family: var(--font-mono);
 }
 
