@@ -256,5 +256,693 @@
         "简介": "署名はなく、ただ言葉だけを残す。"
       }
     ]
+  },
+  "zh-Hans": {
+    "博客标题": "对经",
+    "博客描述（副标题）": "在纸与光之间，抄写每一次呼吸。",
+    "网站公告": "本季主题为「**光**」。愿你在字里行间，找到一处安静的所在。",
+    "底部信息（格式为markdown）": "对经 · 以字为灯。",
+    "友人帐页面附加信息": "以文会友，往来皆客。",
+    "菜单中的外部链接": [
+      {
+        "url": "https://example.com",
+        "显示名称": "工坊"
+      }
+    ],
+    "页面列表": [
+      {
+        "文件名": "about.md",
+        "页面标题": "关于"
+      },
+      {
+        "文件名": "colophon.md",
+        "页面标题": "题跋"
+      }
+    ],
+    "文章列表": [
+      {
+        "文件名": "08-psalm.md",
+        "文章标题": "诗篇",
+        "摘要": "把一天折成四行，留给夜里读。"
+      },
+      {
+        "文件名": "07-fragment.md",
+        "文章标题": "碎片",
+        "摘要": "「……」之后，剩下的是纸的呼吸。"
+      },
+      {
+        "文件名": "06-pinned.md",
+        "文章标题": "长明灯",
+        "摘要": "放在最前的一页，提醒自己为何写字。"
+      },
+      {
+        "文件名": "04-notes.md",
+        "文章标题": "页边笔记",
+        "摘要": "写在页边的字，比正文更接近手。"
+      },
+      {
+        "文件名": "01-candle.md",
+        "文章标题": "烛火与算术",
+        "摘要": "一支蜡烛能照亮多少行公式？"
+      },
+      {
+        "文件名": "02-silence.md",
+        "文章标题": "论静默",
+        "摘要": "静默不是没有声音，而是声音退到纸的背面。"
+      },
+      {
+        "文件名": "03-english.md",
+        "文章标题": "论专注"
+      }
+    ],
+    "标签名称": {
+      "光": "光",
+      "诗": "诗",
+      "笔记": "笔记",
+      "抄写": "抄写",
+      "静默": "静默",
+      "数学": "数学",
+      "碎片": "碎片",
+      "长明": "长明"
+    },
+    "友人帐": [
+      {
+        "链接": "https://example.com/vesper",
+        "名称": "Vesper",
+        "简介": "晚祷与诗，偶尔译一点旧书。"
+      },
+      {
+        "链接": "https://example.com/scriptorium",
+        "名称": "抄经室",
+        "简介": "关于手抄、纸与墨的札记。"
+      },
+      {
+        "链接": "https://example.com/anonymous",
+        "名称": "无名者",
+        "简介": "不署名，只留下句子。"
+      }
+    ]
+  },
+  "zh-Hant": {
+    "博客标题": "對經",
+    "博客描述（副标题）": "在紙與光之間，抄寫每一次呼吸。",
+    "网站公告": "本季主題為「**光**」。願你在字裡行間，找到一處安靜的所在。",
+    "底部信息（格式为markdown）": "對經 · 以字為燈。",
+    "友人帐页面附加信息": "以文會友，往來皆客。",
+    "菜单中的外部链接": [
+      {
+        "url": "https://example.com",
+        "显示名称": "工坊"
+      }
+    ],
+    "页面列表": [
+      {
+        "文件名": "about.md",
+        "页面标题": "關於"
+      },
+      {
+        "文件名": "colophon.md",
+        "页面标题": "題跋"
+      }
+    ],
+    "文章列表": [
+      {
+        "文件名": "08-psalm.md",
+        "文章标题": "詩篇",
+        "摘要": "把一天摺成四行，留給夜裡讀。"
+      },
+      {
+        "文件名": "07-fragment.md",
+        "文章标题": "碎片",
+        "摘要": "「……」之後，剩下的是紙的呼吸。"
+      },
+      {
+        "文件名": "06-pinned.md",
+        "文章标题": "長明燈",
+        "摘要": "放在最前的一頁，提醒自己為何寫字。"
+      },
+      {
+        "文件名": "04-notes.md",
+        "文章标题": "頁邊筆記",
+        "摘要": "寫在頁邊的字，比正文更接近手。"
+      },
+      {
+        "文件名": "01-candle.md",
+        "文章标题": "燭火與算術",
+        "摘要": "一支蠟燭能照亮多少行公式？"
+      },
+      {
+        "文件名": "02-silence.md",
+        "文章标题": "論靜默",
+        "摘要": "靜默不是沒有聲音，而是聲音退到紙的背面。"
+      },
+      {
+        "文件名": "03-english.md",
+        "文章标题": "論專注"
+      }
+    ],
+    "标签名称": {
+      "光": "光",
+      "诗": "詩",
+      "笔记": "筆記",
+      "抄写": "抄寫",
+      "静默": "靜默",
+      "数学": "數學",
+      "碎片": "碎片",
+      "长明": "長明"
+    },
+    "友人帐": [
+      {
+        "链接": "https://example.com/vesper",
+        "名称": "Vesper",
+        "简介": "晚禱與詩，偶爾譯一點舊書。"
+      },
+      {
+        "链接": "https://example.com/scriptorium",
+        "名称": "抄經室",
+        "简介": "關於手抄、紙與墨的札記。"
+      },
+      {
+        "链接": "https://example.com/anonymous",
+        "名称": "無名者",
+        "简介": "不署名，只留下句子。"
+      }
+    ]
+  },
+  "ko": {
+    "博客标题": "대경",
+    "博客描述（副标题）": "종이와 빛 사이에서, 숨결마다 옮겨 적다.",
+    "网站公告": "이번 계절의 주제는 **빛**입니다. 행과 행 사이에서 고요한 자리를 찾으시기를.",
+    "底部信息（格式为markdown）": "대경 · 글자로 등불을 밝히다.",
+    "友人帐页面附加信息": "글로 만난 벗들. 찾아오는 이는 모두 손님입니다.",
+    "菜单中的外部链接": [
+      {
+        "url": "https://example.com",
+        "显示名称": "공방"
+      }
+    ],
+    "页面列表": [
+      {
+        "文件名": "about.md",
+        "页面标题": "소개"
+      },
+      {
+        "文件名": "colophon.md",
+        "页面标题": "판권"
+      }
+    ],
+    "文章列表": [
+      {
+        "文件名": "08-psalm.md",
+        "文章标题": "시편",
+        "摘要": "하루를 네 줄로 접어 밤에 읽으려 남겨두다."
+      },
+      {
+        "文件名": "07-fragment.md",
+        "文章标题": "단편",
+        "摘要": "「……」뒤에 남는 것은 종이의 숨결."
+      },
+      {
+        "文件名": "06-pinned.md",
+        "文章标题": "장명등",
+        "摘要": "가장 앞에 둔 한 페이지, 왜 쓰는지 스스로에게 일깨우기 위해."
+      },
+      {
+        "文件名": "04-notes.md",
+        "文章标题": "여백의 노트",
+        "摘要": "여백에 적은 글은 본문보다 손에 가깝다."
+      },
+      {
+        "文件名": "01-candle.md",
+        "文章标题": "촛불과 산술",
+        "摘要": "어둠 속에서 불꽃을 하나씩 세어 가다."
+      },
+      {
+        "文件名": "02-silence.md",
+        "文章标题": "침묵에 대하여",
+        "摘要": "침묵은 소리의 부재가 아니라 분주함의 부재다."
+      },
+      {
+        "文件名": "03-english.md",
+        "文章标题": "주의에 관하여"
+      }
+    ],
+    "标签名称": {
+      "光": "빛",
+      "诗": "시",
+      "笔记": "노트",
+      "抄写": "필사",
+      "静默": "침묵",
+      "数学": "산술",
+      "碎片": "단편",
+      "长明": "장명"
+    },
+    "友人帐": [
+      {
+        "链接": "https://example.com/vesper",
+        "名称": "Vesper",
+        "简介": "저녁기도와 시, 이따금 옛 책을 조금 옮기기도."
+      },
+      {
+        "链接": "https://example.com/scriptorium",
+        "名称": "필사실",
+        "简介": "필사와 종이와 먹에 관한 노트."
+      },
+      {
+        "链接": "https://example.com/anonymous",
+        "名称": "무명씨",
+        "简介": "서명 없이, 문장만을 남기다."
+      }
+    ]
+  },
+  "pt": {
+    "博客标题": "Antiphon",
+    "博客描述（副标题）": "Escrever cada respiração, entre o papel e a luz.",
+    "网站公告": "O tema desta estação é a **luz**. Que você encontre um lugar silencioso entre as linhas.",
+    "底部信息（格式为markdown）": "Antiphon · uma lâmpada feita de letras.",
+    "友人帐页面附加信息": "Amigos feitos pela escrita; todo visitante é um convidado.",
+    "菜单中的外部链接": [
+      {
+        "url": "https://example.com",
+        "显示名称": "Oficina"
+      }
+    ],
+    "页面列表": [
+      {
+        "文件名": "about.md",
+        "页面标题": "Sobre"
+      },
+      {
+        "文件名": "colophon.md",
+        "页面标题": "Colofão"
+      }
+    ],
+    "文章列表": [
+      {
+        "文件名": "08-psalm.md",
+        "文章标题": "Salmo",
+        "摘要": "Dobrar um dia em quatro versos e guardá-lo para a noite."
+      },
+      {
+        "文件名": "07-fragment.md",
+        "文章标题": "Fragmento",
+        "摘要": "Depois do “…”, o que resta é a respiração do papel."
+      },
+      {
+        "文件名": "06-pinned.md",
+        "文章标题": "Lâmpada Eterna",
+        "摘要": "A primeira página, guardada ali para lembrar por que escrevo."
+      },
+      {
+        "文件名": "04-notes.md",
+        "文章标题": "Notas à Margem",
+        "摘要": "Notas escritas onde a página não tem espaço."
+      },
+      {
+        "文件名": "01-candle.md",
+        "文章标题": "Vela e Aritmética",
+        "摘要": "Contar no escuro, uma chama por vez."
+      },
+      {
+        "文件名": "02-silence.md",
+        "文章标题": "Do Silêncio",
+        "摘要": "O silêncio não é ausência de som, mas de pressa."
+      },
+      {
+        "文件名": "03-english.md",
+        "文章标题": "Sobre a Atenção"
+      }
+    ],
+    "标签名称": {
+      "光": "Luz",
+      "诗": "Poesia",
+      "笔记": "Notas",
+      "抄写": "Cópia",
+      "静默": "Silêncio",
+      "数学": "Aritmética",
+      "碎片": "Fragmentos",
+      "长明": "Eterno"
+    },
+    "友人帐": [
+      {
+        "链接": "https://example.com/vesper",
+        "名称": "Vesper",
+        "简介": "Vésperas e poemas, com algum livro antigo traduzido de vez em quando."
+      },
+      {
+        "链接": "https://example.com/scriptorium",
+        "名称": "O Scriptorium",
+        "简介": "Notas sobre a cópia à mão, papel e tinta."
+      },
+      {
+        "链接": "https://example.com/anonymous",
+        "名称": "O Anônimo",
+        "简介": "Sem assinatura, apenas frases deixadas para trás."
+      }
+    ]
+  },
+  "es": {
+    "博客标题": "Antiphon",
+    "博客描述（副标题）": "Escribir cada respiración, entre el papel y la luz.",
+    "网站公告": "El tema de esta temporada es la **luz**. Que encuentres un lugar tranquilo entre las líneas.",
+    "底部信息（格式为markdown）": "Antiphon · una lámpara hecha de letras.",
+    "友人帐页面附加信息": "Amigos hechos por la escritura; todo visitante es un invitado.",
+    "菜单中的外部链接": [
+      {
+        "url": "https://example.com",
+        "显示名称": "Taller"
+      }
+    ],
+    "页面列表": [
+      {
+        "文件名": "about.md",
+        "页面标题": "Acerca de"
+      },
+      {
+        "文件名": "colophon.md",
+        "页面标题": "Colofón"
+      }
+    ],
+    "文章列表": [
+      {
+        "文件名": "08-psalm.md",
+        "文章标题": "Salmo",
+        "摘要": "Doblar un día en cuatro líneas y guardarlo para la noche."
+      },
+      {
+        "文件名": "07-fragment.md",
+        "文章标题": "Fragmento",
+        "摘要": "Tras «…», lo que queda es la respiración del papel."
+      },
+      {
+        "文件名": "06-pinned.md",
+        "文章标题": "Lámpara Eterna",
+        "摘要": "La primera página, guardada ahí para recordarme por qué escribo."
+      },
+      {
+        "文件名": "04-notes.md",
+        "文章标题": "Notas al Margen",
+        "摘要": "Notas escritas donde la página no tiene espacio."
+      },
+      {
+        "文件名": "01-candle.md",
+        "文章标题": "Vela y Aritmética",
+        "摘要": "Contar en la oscuridad, una llama a la vez."
+      },
+      {
+        "文件名": "02-silence.md",
+        "文章标题": "Sobre el Silencio",
+        "摘要": "El silencio no es ausencia de sonido sino de prisa."
+      },
+      {
+        "文件名": "03-english.md",
+        "文章标题": "Sobre la Atención"
+      }
+    ],
+    "标签名称": {
+      "光": "Luz",
+      "诗": "Poesía",
+      "笔记": "Notas",
+      "抄写": "Copia",
+      "静默": "Silencio",
+      "数学": "Aritmética",
+      "碎片": "Fragmentos",
+      "长明": "Eterno"
+    },
+    "友人帐": [
+      {
+        "链接": "https://example.com/vesper",
+        "名称": "Vesper",
+        "简介": "Vísperas y poemas, con algún libro viejo traducido de vez en cuando."
+      },
+      {
+        "链接": "https://example.com/scriptorium",
+        "名称": "El Scriptorium",
+        "简介": "Notas sobre la copia a mano, el papel y la tinta."
+      },
+      {
+        "链接": "https://example.com/anonymous",
+        "名称": "El Anónimo",
+        "简介": "Sin firma, solo frases dejadas atrás."
+      }
+    ]
+  },
+  "fr": {
+    "博客标题": "Antiphon",
+    "博客描述（副标题）": "Écrire chaque souffle, entre le papier et la lumière.",
+    "网站公告": "Le thème de la saison est la **lumière**. Puissiez-vous trouver un lieu paisible entre les lignes.",
+    "底部信息（格式为markdown）": "Antiphon · une lampe faite de lettres.",
+    "友人帐页面附加信息": "Des amis rencontrés par l'écriture ; tout visiteur est un hôte.",
+    "菜单中的外部链接": [
+      {
+        "url": "https://example.com",
+        "显示名称": "Atelier"
+      }
+    ],
+    "页面列表": [
+      {
+        "文件名": "about.md",
+        "页面标题": "À propos"
+      },
+      {
+        "文件名": "colophon.md",
+        "页面标题": "Colophon"
+      }
+    ],
+    "文章列表": [
+      {
+        "文件名": "08-psalm.md",
+        "文章标题": "Psaume",
+        "摘要": "Plier une journée en quatre vers et la garder pour la nuit."
+      },
+      {
+        "文件名": "07-fragment.md",
+        "文章标题": "Fragment",
+        "摘要": "Après « … », ce qui demeure, c'est la respiration du papier."
+      },
+      {
+        "文件名": "06-pinned.md",
+        "文章标题": "Lampe Éternelle",
+        "摘要": "La première page, gardée là pour me rappeler pourquoi j'écris."
+      },
+      {
+        "文件名": "04-notes.md",
+        "文章标题": "Notes Marginales",
+        "摘要": "Notes écrites là où la page n'a plus de place."
+      },
+      {
+        "文件名": "01-candle.md",
+        "文章标题": "Chandelle et Arithmétique",
+        "摘要": "Compter dans le noir, une flamme à la fois."
+      },
+      {
+        "文件名": "02-silence.md",
+        "文章标题": "Du Silence",
+        "摘要": "Le silence n'est pas l'absence de son, mais celle de la hâte."
+      },
+      {
+        "文件名": "03-english.md",
+        "文章标题": "De l'Attention"
+      }
+    ],
+    "标签名称": {
+      "光": "Lumière",
+      "诗": "Poésie",
+      "笔记": "Notes",
+      "抄写": "Copie",
+      "静默": "Silence",
+      "数学": "Arithmétique",
+      "碎片": "Fragments",
+      "长明": "Éternel"
+    },
+    "友人帐": [
+      {
+        "链接": "https://example.com/vesper",
+        "名称": "Vesper",
+        "简介": "Vêpres et poèmes, avec parfois un vieux livre traduit."
+      },
+      {
+        "链接": "https://example.com/scriptorium",
+        "名称": "Le Scriptorium",
+        "简介": "Notes sur la copie à la main, le papier et l'encre."
+      },
+      {
+        "链接": "https://example.com/anonymous",
+        "名称": "L'Anonyme",
+        "简介": "Pas de signature, seulement des phrases laissées derrière."
+      }
+    ]
+  },
+  "ru": {
+    "博客标题": "Antiphon",
+    "博客描述（副标题）": "Записывать каждое дыхание, между бумагой и светом.",
+    "网站公告": "Тема этого сезона — **свет**. Пусть между строк найдётся тихое место.",
+    "底部信息（格式为markdown）": "Antiphon · светильник из букв.",
+    "友人帐页面附加信息": "Друзья, встреченные письмом; каждый вошедший — гость.",
+    "菜单中的外部链接": [
+      {
+        "url": "https://example.com",
+        "显示名称": "Мастерская"
+      }
+    ],
+    "页面列表": [
+      {
+        "文件名": "about.md",
+        "页面标题": "О сайте"
+      },
+      {
+        "文件名": "colophon.md",
+        "页面标题": "Колофон"
+      }
+    ],
+    "文章列表": [
+      {
+        "文件名": "08-psalm.md",
+        "文章标题": "Псалом",
+        "摘要": "Сложить день в четыре строки и оставить для ночи."
+      },
+      {
+        "文件名": "07-fragment.md",
+        "文章标题": "Фрагмент",
+        "摘要": "После «…» остаётся дыхание бумаги."
+      },
+      {
+        "文件名": "06-pinned.md",
+        "文章标题": "Вечная лампа",
+        "摘要": "Первая страница, оставленная здесь, чтобы помнить, зачем я пишу."
+      },
+      {
+        "文件名": "04-notes.md",
+        "文章标题": "Записки на полях",
+        "摘要": "Записи там, где странице не хватает места."
+      },
+      {
+        "文件名": "01-candle.md",
+        "文章标题": "Свеча и арифметика",
+        "摘要": "Считать в темноте, пламя за пламенем."
+      },
+      {
+        "文件名": "02-silence.md",
+        "文章标题": "О тишине",
+        "摘要": "Тишина — не отсутствие звука, а отсутствие спешки."
+      },
+      {
+        "文件名": "03-english.md",
+        "文章标题": "О внимании"
+      }
+    ],
+    "标签名称": {
+      "光": "Свет",
+      "诗": "Стихи",
+      "笔记": "Записки",
+      "抄写": "Переписывание",
+      "静默": "Тишина",
+      "数学": "Арифметика",
+      "碎片": "Фрагменты",
+      "长明": "Вечный"
+    },
+    "友人帐": [
+      {
+        "链接": "https://example.com/vesper",
+        "名称": "Vesper",
+        "简介": "Вечерни и стихи; изредка — перевод старинной книги."
+      },
+      {
+        "链接": "https://example.com/scriptorium",
+        "名称": "Скрипторий",
+        "简介": "Записки о ручном переписывании, бумаге и туши."
+      },
+      {
+        "链接": "https://example.com/anonymous",
+        "名称": "Безымянный",
+        "简介": "Без подписи — только оставленные строки."
+      }
+    ]
+  },
+  "ar": {
+    "博客标题": "Antiphon",
+    "博客描述（副标题）": "كتابة كل نَفَس، بين الورق والنور.",
+    "网站公告": "موضوع هذا الموسم هو **النور**. عسى أن تجد بين السطور مكانًا هادئًا.",
+    "底部信息（格式为markdown）": "Antiphon · مصباح من الحروف.",
+    "友人帐页面附加信息": "أصدقاء عرفناهم بالكتابة؛ وكل زائر ضيف.",
+    "菜单中的外部链接": [
+      {
+        "url": "https://example.com",
+        "显示名称": "الورشة"
+      }
+    ],
+    "页面列表": [
+      {
+        "文件名": "about.md",
+        "页面标题": "عن الموقع"
+      },
+      {
+        "文件名": "colophon.md",
+        "页面标题": "بيان الطبعة"
+      }
+    ],
+    "文章列表": [
+      {
+        "文件名": "08-psalm.md",
+        "文章标题": "مزمور",
+        "摘要": "طَيَّ يومًا في أربعة أسطر واحتفظ به لليل."
+      },
+      {
+        "文件名": "07-fragment.md",
+        "文章标题": "شذرة",
+        "摘要": "بعد «…» لا يبقى إلا تنفّس الورق."
+      },
+      {
+        "文件名": "06-pinned.md",
+        "文章标题": "المصباح الدائم",
+        "摘要": "الصفحة الأولى، أُبقيت هناك لأذكّر نفسي لماذا أكتب."
+      },
+      {
+        "文件名": "04-notes.md",
+        "文章标题": "الحواشي",
+        "摘要": "حواشٍ كُتبت في الموضع الذي لا تتسع له الصفحة."
+      },
+      {
+        "文件名": "01-candle.md",
+        "文章标题": "شمعة وحساب",
+        "摘要": "العدّ في الظلام، لهبًا بعد لهب."
+      },
+      {
+        "文件名": "02-silence.md",
+        "文章标题": "في الصمت",
+        "摘要": "الصمت ليس غياب الصوت بل غياب العجلة."
+      },
+      {
+        "文件名": "03-english.md",
+        "文章标题": "في الانتباه"
+      }
+    ],
+    "标签名称": {
+      "光": "النور",
+      "诗": "الشعر",
+      "笔记": "الحواشي",
+      "抄写": "النسخ",
+      "静默": "الصمت",
+      "数学": "الحساب",
+      "碎片": "الشذرات",
+      "长明": "الدائم"
+    },
+    "友人帐": [
+      {
+        "链接": "https://example.com/vesper",
+        "名称": "Vesper",
+        "简介": "صلوات المساء والقصائد، وأحيانًا ترجمة كتاب قديم."
+      },
+      {
+        "链接": "https://example.com/scriptorium",
+        "名称": "غرفة النسّاخ",
+        "简介": "حواشٍ عن النسخ باليد والورق والحبر."
+      },
+      {
+        "链接": "https://example.com/anonymous",
+        "名称": "المجهول",
+        "简介": "بلا توقيع، سوى جُمَلَ تركها خلفه."
+      }
+    ]
   }
 }
