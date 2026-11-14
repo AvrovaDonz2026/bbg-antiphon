@@ -920,6 +920,110 @@ body:not([data-script]):lang(en) .article-dek {
   color: var(--muted);
 }
 
+/* ——— Valine skin ———
+   Valine ships its own unthemed sheet (white fields, blue buttons, pale
+   scrollbars) that sits inside .comment-area like a pasted screenshot. Every
+   rule here is scoped under #comments (the mount node js/comments.js gives
+   it) and resolves through theme variables only, so the widget tracks both
+   day and night palettes with no literal colour and no JS reskin. */
+#comments .v {
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+#comments .v .vwrap {
+  border: 1px solid var(--rule);
+  background: var(--panel-2);
+}
+
+#comments .v .vinput,
+#comments .v textarea.veditor {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+#comments .v .vinput::placeholder,
+#comments .v textarea.veditor::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+#comments .v .vinput:focus,
+#comments .v textarea.veditor:focus {
+  border-color: var(--signal);
+  outline: none;
+}
+
+#comments .v .vbtn {
+  background: transparent;
+  border: 1px solid var(--signal);
+  color: var(--signal);
+  font-family: var(--font-ui);
+}
+
+#comments .v .vbtn:hover,
+#comments .v .vbtn:focus {
+  background: var(--signal);
+  color: var(--panel);
+}
+
+#comments .v .vcard {
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+}
+
+#comments .v .vname,
+#comments .v .vtime {
+  color: var(--muted);
+}
+
+#comments .v .vcontent {
+  color: var(--ink);
+}
+
+#comments .v .vmark {
+  color: var(--muted);
+  border-bottom: 1px dotted var(--rule-2);
+}
+
+#comments .v .vcount {
+  color: var(--signal);
+}
+
+#comments .v .vat,
+#comments .v .vat i {
+  color: var(--link);
+}
+
+#comments .v .vcontent a {
+  color: var(--link);
+}
+
+/* Valine's own scrollbar styling bleeds bright tracks into the night sheet;
+   the theme's rule tone is the correct chrome for them. */
+#comments .v .vlist::-webkit-scrollbar,
+#comments .v .veditor::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+#comments .v .vlist::-webkit-scrollbar-thumb,
+#comments .v .veditor::-webkit-scrollbar-thumb {
+  background: var(--rule-2);
+}
+
+#comments .v .vlist::-webkit-scrollbar-track,
+#comments .v .veditor::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#comments .v .vlist::-webkit-scrollbar-thumb:hover,
+#comments .v .veditor::-webkit-scrollbar-thumb:hover {
+  background: var(--signal);
+}
+
 /* ——— archive ——— */
 
 .archive-block {
