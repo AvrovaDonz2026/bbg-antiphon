@@ -95,7 +95,13 @@ window.Antiphon = window.Antiphon || {};
        so it only runs for zh-Hant. */
     if (active === "zh-Hant" && tags.indexOf("zh-Hans") === -1) tags.push("zh-Hans");
 
-    if (!isAuthoredLocale(active) && tags.indexOf("zh-Hans") === -1) {
+    /* The en fallback runs whenever the active locale is not the language the
+       site was authored in — including a zh-Hans or zh-Hant visitor on a blog
+       authored in ja, de or anything else non-Chinese, whose metadata ships
+       "en". The only exception is a zh-Hant reader on a zh-Hans-authored site,
+       which is already covered by the nearest-neighbour borrow above; there
+       the authored copy is the right answer and the chain stops. */
+    if (!isAuthoredLocale(active) && !(active === "zh-Hant" && isAuthoredLocale("zh-Hans"))) {
       var fallback = canonical("en") || "en";
       if (tags.indexOf(fallback) === -1) tags.push(fallback);
     }
