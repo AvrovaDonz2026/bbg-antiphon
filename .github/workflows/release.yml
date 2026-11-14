@@ -20,16 +20,25 @@ concurrency:
 jobs:
   package:
     runs-on: ubuntu-latest
-    env:
-      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
+      # The tag is resolved once and reused by every later step. A manual
+      # workflow_dispatch may leave `tag` empty, in which case the newest
+      # release tag is looked up; referencing the raw input would have made
+      # `gh release upload "$TAG"` fail with an empty argument even though
+      # checkout had already resolved the ref. Every step below therefore
+      # reads `steps.ref.outputs.ref`, so the built ref, the uploaded asset
+      # and the reported size can never disagree.
       - name: Resolve the ref to build
         id: ref
         run: |
           set -euo pipefail
-          ref="${TAG}"
+          ref="${{ github.event.release.tag_name || inputs.tag }}"
           if [ -z "$ref" ]; then
             ref="$(gh release view --json tagName --jq .tagName)"
+          fi
+          if [ -z "$ref" ]; then
+            echo "::error::no tag supplied and no release tag found"
+            exit 1
           fi
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
           echo "Packaging $ref"
@@ -60,7 +69,7 @@ jobs:
           unzip -t "$zip" > /dev/null || { echo "::error::archive is corrupt"; exit 1; }
 
       - name: Attach the archive to the release
-        run: gh release upload "$TAG" dist/antiphon-v2.bbgtheme2 --clobber
+        run: gh release upload "${{ steps.ref.outputs.ref }}" dist/antiphon-v2.bbgtheme2 --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -68,8 +77,8 @@ jobs:
         run: |
           set -euo pipefail
           bytes=$(wc -c < dist/antiphon-v2.bbgtheme2 | tr -d ' ')
-          echo "Published antiphon-v2.bbgtheme2 ($bytes bytes) on $TAG"
-          gh release view "$TAG" --json assets \
+          echo "Published antiphon-v2.bbgtheme2 ($bytes bytes) on ${{ steps.ref.outputs.ref }}"
+          gh release view "${{ steps.ref.outputs.ref }}" --json assets \
             --jq '.assets[] | select(.name=="antiphon-v2.bbgtheme2") | "\(.name) \(.size) bytes state=\(.state)"'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
