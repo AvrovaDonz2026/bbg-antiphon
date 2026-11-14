@@ -43,13 +43,23 @@ window.Antiphon = window.Antiphon || {};
     return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 
-  function deepMerge(base, extra) {
+  /* Depth-capped merge (cap 8, generous vs the ≤3-level theme cfg): at the cap
+     the extra value wins outright, which is also the least surprising outcome
+     for a config merge — and it keeps a circular config object from recursing
+     into a RangeError. */
+  function deepMerge(base, extra, depth) {
     var out = Array.isArray(base) ? base.slice() : Object.assign({}, base);
     if (!isPlainObject(extra)) return out;
+    if (depth > 8) {
+      Object.keys(extra).forEach(function (key) {
+        if (extra[key] !== undefined) out[key] = extra[key];
+      });
+      return out;
+    }
     Object.keys(extra).forEach(function (key) {
       var value = extra[key];
       if (isPlainObject(value) && isPlainObject(out[key])) {
-        out[key] = deepMerge(out[key], value);
+        out[key] = deepMerge(out[key], value, depth + 1);
       } else if (value !== undefined) {
         out[key] = value;
       }
@@ -57,7 +67,7 @@ window.Antiphon = window.Antiphon || {};
     return out;
   }
 
-  A.deepMerge = deepMerge;
+  A.deepMerge = function (base, extra) { return deepMerge(base, extra, 0); };
 
   function parseLegacyTime(value) {
     if (typeof value === "number" && isFinite(value) && value > 0) return value;
@@ -457,6 +467,12 @@ window.Antiphon = window.Antiphon || {};
        typographic device, not a locale preference, so zero-padding is applied
        after locale grouping and only when the caller asks for it. */
     if (pad) {
+      /* Zero-padded columns are a fixed typographic device, so the requested
+         width is clamped the same way every other numeric knob in this file is
+         (A.clamp): a caller handing in a huge pad would otherwise run an
+         unbounded "0"-prepending loop to OOM on the main thread. Non-integer
+         pads (2.5) floor to 2 and pad one char, as before. */
+      pad = A.clamp(Math.floor(Number(pad) || 0), 0, 16);
       var plain = Math.round(number).toString();
       while (plain.length < pad) plain = "0" + plain;
       text = plain;

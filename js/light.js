@@ -8,7 +8,11 @@ window.Antiphon = window.Antiphon || {};
 
   var FRAG =
     "precision highp float;varying vec2 v_uv;uniform vec2 u_res;uniform float u_time;uniform float u_dark;uniform float u_intensity;uniform float u_dust;" +
-    "float hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}" +
+    /* mod 289 keeps intermediates far below mediump's 65504 limit: u_res can be
+       ~900+, so p*456.21 ≈ 4.1e5 overflows to Infinity on mediump GPUs and
+       fract(Infinity) is NaN — the grain layer dies per-pixel. Residue differs
+       slightly per device, which is invisible in white-noise grain. */
+    "float hash21(vec2 p){p=mod(p,289.0);p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}" +
     /* sparse embers: the institute's instrument lights, not a LED billboard */
     "float embers(vec2 uv,float t){vec2 p=uv*u_res/72.0;vec2 id=floor(p);vec2 f=fract(p)-0.5;float h=hash21(id);float on=step(mix(0.72,0.42,u_dust),h);float period=3.0+9.0*h;float blink=0.5+0.5*sin(6.2831853*t/period+h*6.2831853);float d=length(f);return (1.0-smoothstep(0.05,0.2,d))*on*blink;}" +
     "void main(){vec2 uv=v_uv;float t=u_time;float flicker=1.0+0.014*sin(t*1.13)+0.008*sin(t*2.7);" +
@@ -96,7 +100,10 @@ window.Antiphon = window.Antiphon || {};
   function draw(now) {
     var gl = state.gl;
     if (!gl || !state.program) return;
-    resize();
+    /* Canvas backing size is set by initGL() and the window resize listener,
+       not here: clientWidth/clientHeight are layout reads, and reading them
+       every frame forced a reflow per frame and threw away the batching the
+       rAF loop existed to provide. */
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(state.program);
@@ -234,17 +241,36 @@ window.Antiphon = window.Antiphon || {};
         try {
           initGL(canvas);
           state.fallenBack = false;
+          resize();
           if (state.enabled) enable(true);
         } catch (error) { fallback(error); }
       });
       window.addEventListener("resize", function () {
         if (!state.fallenBack) resize();
       });
+      /* Background tabs: the rAF loop keeps burning GPU/battery with nothing
+         visible, so it is parked while the page is hidden and resumed — or, in
+         reduced-motion mode, repainted as one still frame — when it returns.
+         Reduced motion must not use this to start the 60fps loop the reader
+         asked not to see. */
+      document.addEventListener("visibilitychange", function () {
+        if (state.fallenBack) return;
+        if (document.hidden) {
+          stopLoop();
+        } else if (state.enabled) {
+          if (state.reduced) {
+            if (state.renderOnce) draw(window.performance.now());
+          } else {
+            startLoop();
+          }
+        }
+      });
     }
 
     try {
       stopLoop();
       initGL(canvas);
+      resize();
       state.fallenBack = false;
       state.startTime = window.performance.now();
       document.body.setAttribute("data-light", state.enabled ? "on" : "off");
