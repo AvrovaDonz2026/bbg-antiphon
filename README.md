@@ -26,6 +26,7 @@
 
 ```bash
 bash tools/preview.sh 8775   # 本地预览，使用 preview/ 中的示例数据
+bash tools/make-demo.sh demo # 组装 GitHub Pages 演示站
 bash tools/build.sh          # 打包为 dist/antiphon-v2.bbgtheme2
 ```
 
@@ -33,12 +34,26 @@ bash tools/build.sh          # 打包为 dist/antiphon-v2.bbgtheme2
 
 ```
 index.html          入口，按 BBG 查询参数路由
-css/                tokens · base · layout · views · light
-js/                 app · router · data · views · markdown · i18n · light · comments
+css/                tokens · base · layout · views · motion · light · fonts
+js/                 app · router · data · content · views · markdown · i18n · light · comments
 themecfg/           themecfg.json 与配置手册
-preview/            本地预览用示例数据（不打包进主题）
-tools/              preview.sh · build.sh
+preview/            预览夹具：示例博客数据 + atom.xml，同时也是 demo 的素材来源
+tools/              preview.sh · make-demo.sh · build.sh · check-locales.cjs
 ```
+
+`demo/` 与 `dist/` 都是生成物，不提交到 Git。`demo/` 由
+`tools/make-demo.sh` 从主题源码与 `preview/` 夹具组装，`.github/workflows/pages.yml`
+在每次部署时调用它；`dist/` 由 `tools/build.sh` 生成。因此仓库里每个文件只有一份
+真实来源：主题只有根目录那一份，示例博客只有 `preview/` 那一份。
+
+## 多语言
+
+主题界面文案（导航、分区标题、日期、分页、页脚等）随站点语言在 11 种语言间切换，
+界面语言按「访客选择 → 站点配置 `网站语言` → 系统语言 → 英语」的顺序解析。
+
+文章与页面的**正文不翻译**：它是作者用自己语言写的正文，主题无权改写。可选的
+`data/i18n.json` 只用于站点自行提供的**元数据**译文（博客标题、副标题、公告、
+文章标题/摘要/标签），不填则一律使用原文。
 
 ## 许可
 

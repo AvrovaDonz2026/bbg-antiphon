@@ -53,6 +53,26 @@
   <link rel="stylesheet" href="./css/light.css" />
 </head>
 <body data-mode="day" data-light="off" data-script="latin">
+  <!-- Resolve the palette before anything paints. <body> always opens on
+       data-mode="day", but a reader who chose night — or whose system prefers
+       dark — would otherwise see a day-coloured first frame until boot() has
+       finished loading site data. This runs at body open, before any child is
+       parsed, so the very first frame already has the right palette. It can
+       only consult the stored choice and prefers-color-scheme; the site config's
+       默认模式 is applied later by boot(), which is where config is known. -->
+  <script>
+  try {
+    var stored = null;
+    try { stored = localStorage.getItem("antiphon:mode"); } catch (e) {}
+    var mode = stored;
+    if (mode !== "day" && mode !== "night") {
+      mode = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "night" : "day";
+    }
+    document.body.setAttribute("data-mode", mode);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", mode === "night" ? "#121110" : "#EDEAE0");
+  } catch (error) {}
+  </script>
   <a class="skip" href="#main">Skip to content</a>
   <div id="light-fallback" aria-hidden="true"></div>
   <canvas id="light-canvas" aria-hidden="true"></canvas>
@@ -93,6 +113,7 @@
   <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top" hidden>↑</button>
 
   <script src="./js/data.js"></script>
+  <script src="./js/content.js"></script>
   <script src="./js/light.js"></script>
   <script src="./js/markdown.js"></script>
   <script src="./js/comments.js"></script>

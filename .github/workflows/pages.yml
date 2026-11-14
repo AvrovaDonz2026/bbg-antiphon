@@ -21,15 +21,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Regenerate demo/ from theme source
-        run: |
-          set -euo pipefail
-          rm -rf demo/css demo/js demo/themecfg demo/index.html
-          mkdir -p demo
-          cp index.html demo/index.html
-          cp -R css demo/css
-          cp -R js demo/js
-          cp -R themecfg demo/themecfg
+      - name: Assemble demo/ from theme source and preview fixture
+        run: bash tools/make-demo.sh demo
 
       - name: Show published tree
         run: find demo -type f | sort

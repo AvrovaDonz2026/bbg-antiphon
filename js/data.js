@@ -151,6 +151,9 @@ window.Antiphon = window.Antiphon || {};
       pages.forEach(function (page, i) { page.index = i; });
 
       A.state.blog = blog;
+      A.state.raw.blog = blog;
+      A.state.raw.articles = articles;
+      A.state.raw.pages = pages;
       A.state.articles = articles;
       A.state.pages = pages;
       A.state.visible = articles.filter(function (article) { return !article.hidden; });
@@ -175,6 +178,75 @@ window.Antiphon = window.Antiphon || {};
     }
     A.state.cfg = deepMerge(defaults, A.state.themeCfg);
     return A.state.cfg;
+  };
+
+  /* ——— derived state, rebuilt per locale ———
+     Every view reads A.state.articles / A.state.pages / A.state.visible,
+     which are normalised from data/index.json. Re-running normalisation on
+     the authored records and then overlaying the content sidecar is what
+     makes a language switch *global*: instead of patching fifteen call sites
+     that print an authored title, one rebuild gives every downstream view
+     (home, archive, tags, search, prev/next, marginalia, comments) the
+     localised record at once.
+
+     The authored records are kept pristine in `raw` so repeated switches
+     never compound an overlay onto a previous overlay, and the localised
+     config is published on A.state.local rather than written into
+     A.state.blog: 网站语言 and the other resolution inputs must stay authored,
+     or the switcher would end up reading its own output. */
+  A.state.raw = { blog: null, articles: [], pages: [] };
+  A.state.local = { blog: null, articles: [], pages: [], visible: [] };
+
+  var LOCALIZED_BLOG_FIELDS = [
+    "博客标题",
+    "博客描述（副标题）",
+    "网站公告",
+    "底部信息（格式为markdown）",
+    "全站内容授权说明",
+    "友人帐页面附加信息"
+  ];
+
+  A.rebuildLocalized = function () {
+    var authored = A.state.raw;
+    if (!authored || !authored.blog) return;
+    var blog = authored.blog;
+
+    /* Config overlay: copy the authored config, then replace only the prose
+       fields the sidecar names. The copy keeps 网站语言, the feature flags and
+       the comment/theme blocks identical by reference. */
+    var localBlog = Object.assign({}, blog);
+    if (A.contentText) {
+      LOCALIZED_BLOG_FIELDS.forEach(function (field) {
+        if (blog[field] === undefined && !A.content(field, null)) return;
+        localBlog[field] = A.contentText(field, blog[field]);
+      });
+      if (Array.isArray(blog["菜单中的外部链接"])) {
+        localBlog["菜单中的外部链接"] = A.contentList("菜单中的外部链接", blog["菜单中的外部链接"], "url");
+      }
+    }
+
+    var articles = authored.articles.map(function (article) {
+      return A.localizeArticle ? A.localizeArticle(article, blog) : article;
+    });
+    var pages = authored.pages.map(function (page) {
+      return A.localizePage ? A.localizePage(page, blog) : page;
+    });
+
+    A.state.local.blog = localBlog;
+    A.state.local.articles = articles;
+    A.state.local.pages = pages;
+    A.state.local.visible = articles.filter(function (article) { return !article.hidden; });
+
+    A.state.blog = localBlog;
+    A.state.articles = articles;
+    A.state.pages = pages;
+    A.state.visible = A.state.local.visible;
+  };
+
+  /* The authored config, for anything that must not be localised (language
+     resolution reads 网站语言 from here). */
+  A.authoredBlog = function () {
+    return A.state.raw.blog || A.state.blog;
   };
 
   A.getArticle = function (filename) {

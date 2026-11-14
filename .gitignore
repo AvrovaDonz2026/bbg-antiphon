@@ -1,6 +1,11 @@
 # build output
 dist/
 
+# demo/ is assembled by tools/make-demo.sh from the theme source and the
+# preview fixture, then deployed by .github/workflows/pages.yml. It is a build
+# artifact and is never committed, so a stale copy cannot drift from source.
+demo/
+
 # macOS
 .DS_Store
 

@@ -89,8 +89,10 @@ window.Antiphon = window.Antiphon || {};
 
     /* The fallback site name is the theme's Latin brand, not the literal
        Chinese "对经": a site with no 博客标题 set must not put a Chinese word
-       in the tab of every English, Arabic or Portuguese visitor. */
-    var siteTitle = A.state.blog ? A.state.blog["博客标题"] || "Antiphon" : "Antiphon";
+       in the tab of every English, Arabic or Portuguese visitor. The
+       content sidecar may name this locale's title, which is why the value
+       is read through V.siteName rather than straight off the config. */
+    var siteTitle = A.views && A.views.siteName ? A.views.siteName() : (A.state.blog ? A.state.blog["博客标题"] || "Antiphon" : "Antiphon");
     document.title = result.title ? result.title + " - " + siteTitle : siteTitle;
 
     window.scrollTo(0, 0);

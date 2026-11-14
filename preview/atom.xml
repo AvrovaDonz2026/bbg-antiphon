@@ -2,14 +2,19 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>对经</title>
   <subtitle>在纸与光之间，抄写每一次呼吸。</subtitle>
-  <link href="https://example.com/atom.xml" rel="self"/>
-  <link href="https://example.com"/>
+  <!-- Relative hrefs on purpose: this feed ships with the demo and preview
+       fixtures, which are served from whatever host happens to run them, so an
+       absolute example.com origin would be a dead link the moment it is
+       published. A real site writes its own origin here. -->
+  <link href="atom.xml" rel="self"/>
+  <link href="./"/>
   <updated>2026-11-08T12:00:00Z</updated>
-  <id>https://example.com</id>
+  <id>urn:antiphon-preview</id>
   <author><name>对经</name></author>
   <entry>
     <title>诗篇</title>
-    <link href="https://example.com/index.html?type=article&amp;filename=08-psalm.md"/>
+    <link href="index.html?type=article&amp;filename=08-psalm.md"/>
     <updated>2026-11-08T12:00:00Z</updated>
+    <id>urn:antiphon-preview:08-psalm</id>
   </entry>
 </feed>

@@ -196,8 +196,8 @@ window.Antiphon = window.Antiphon || {};
   function applyMetadata(blog) {
     blog = blog || A.state.blog || {};
     var localized = A.state.langMeta || {};
-    var title = String(blog["博客标题"] || "Antiphon");
-    var description = String((localized.description) || blog["博客描述（副标题）"] || "");
+    var title = A.contentText("博客标题", blog["博客标题"]).trim() || "Antiphon";
+    var description = String((localized.description) || A.contentText("博客描述（副标题）", blog["博客描述（副标题）"]) || "");
     var info = A.localeInfo(A.lang);
     var descriptionNode = document.querySelector('meta[name="description"]');
     if (descriptionNode) descriptionNode.setAttribute("content", description);
@@ -212,9 +212,19 @@ window.Antiphon = window.Antiphon || {};
     var localeNode = document.querySelector('meta[http-equiv="content-language"]');
     if (localeNode) localeNode.setAttribute("content", info.htmlLang);
 
-    /* Only the bare shell carries the placeholder title; a rendered route has
-       already written "a specific page — site", which must survive. */
-    if (document.title === "Antiphon") document.title = title;
+    /* The document title carries the site name, which is itself localised. A
+       rendered route writes "page — site", so the site half must be refreshed
+       on every language change rather than only when the title is still the
+       bare placeholder; otherwise switching locales leaves a stale brand in
+       the tab. Rebuild the suffix from the current name, keeping the page
+       prefix the route chose. */
+    var current = String(document.title || "");
+    var sep = " - ";
+    if (current === "Antiphon" || current === "" || current.indexOf(sep) === -1) {
+      document.title = title;
+    } else {
+      document.title = current.slice(0, current.indexOf(sep)) + sep + title;
+    }
   }
 
   A.applyMetadata = applyMetadata;
@@ -451,11 +461,15 @@ window.Antiphon = window.Antiphon || {};
   function chooseLocale(value) {
     if (value === "auto") {
       try { localStorage.removeItem("antiphon:lang"); } catch (error) {}
-      A.setLang(A.resolveLocale(A.state.blog ? A.state.blog["网站语言"] : null, null));
+      A.setLang(A.resolveLocale((A.authoredBlog() || {})["网站语言"], null));
     } else {
       A.storeLocale(value);
       A.setLang(value);
     }
+    /* Re-derive every authored string for the new locale before repainting.
+       This is the step that makes the switch global rather than skin-deep:
+       the shell, footer, route and all list views read the same rebuilt state. */
+    if (A.rebuildLocalized) A.rebuildLocalized();
     A.applyDomText();
     applyCfg();
     applyMetadata(A.state.blog);
@@ -648,6 +662,11 @@ window.Antiphon = window.Antiphon || {};
     try {
       await A.loadThemeConfig();
       await A.loadBlog();
+      /* The optional content sidecar must land before the first render: the
+         shell, the footer and the route all resolve authored strings through
+         it, and a late load would paint the authored language first and then
+         visibly swap. A site without the file resolves in one tick. */
+      await A.loadContent();
     } catch (error) {
       console.error("[Antiphon] 站点数据加载失败：", error);
       A.views.showError(String(error && error.message ? error.message : error));
@@ -664,6 +683,11 @@ window.Antiphon = window.Antiphon || {};
     /* A.setLang sets data-script too; asserted here so the token layer is resolved
        before applyCfg() and before the first view paints — no post-render jump. */
     A.setScript(A.lang);
+    /* Overlay the content sidecar onto the authored config and records now that
+       both the site data and the locale are known. Everything downstream reads
+       A.state.blog / articles / pages, so this single call localises the whole
+       page rather than just its interface chrome. */
+    A.rebuildLocalized();
     A.applyInterfaceText(A.state.blog);
     /* The static shell in index.html carries English copy so it reads without
        JS and so a crawler that does not run scripts sees the documented

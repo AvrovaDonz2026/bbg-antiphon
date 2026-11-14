@@ -1535,8 +1535,11 @@ window.Antiphon = window.Antiphon || {};
          visitor who lands on the bare shell before the first route resolves
          should still see the site's own title rather than a placeholder. */
       var blog = A.state && A.state.blog;
-      if (blog && document.title === "Antiphon") {
-        document.title = String(blog["博客标题"] || "Antiphon");
+      if (blog) {
+        var name = A.state.blog["博客标题"] || "Antiphon";
+        if (document.title === "Antiphon" || document.title === "对经") {
+          document.title = String(name);
+        }
       }
     }
     if (document.readyState === "loading") {

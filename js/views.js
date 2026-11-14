@@ -199,9 +199,10 @@ window.Antiphon = window.Antiphon || {};
     }
     A.state.pages.forEach(function (page) {
       if (!page.inMenu) return;
+      var localized = A.localizePage(page);
       items.push({
         key: "page:" + page.filename,
-        label: page.menuLabel || page.title,
+        label: localized.menuLabel || localized.title,
         href: "./index.html?type=page&filename=" + encodeURIComponent(page.filename),
         blank: page.newTab
       });
@@ -213,7 +214,11 @@ window.Antiphon = window.Antiphon || {};
         href: "./index.html?type=internal&function=friendbook"
       });
     }
-    (blog["菜单中的外部链接"] || []).forEach(function (link) {
+    /* External links are authored, so their display names come from the
+     content sidecar when it names this locale, matched by url. The url itself
+     is never translated — it is the identity of the link, not its label. */
+    var externalLinks = A.contentList("菜单中的外部链接", blog["菜单中的外部链接"], "url");
+    externalLinks.forEach(function (link) {
       if (!link || !link["url"]) return;
       items.push({
         key: null,
@@ -233,15 +238,22 @@ window.Antiphon = window.Antiphon || {};
      translatable interface string (the theme cannot know what an author's
      blog is called in German), so the fallback is the theme's own Latin name
      rather than a translation — the same choice js/app.js makes for the
-     placeholder <title> and og:title. */
+     placeholder <title> and og:title.
+
+     When data/i18n.json names this locale's title, that string wins: a site
+     that really does publish "The Antiphon" in German must be able to say so,
+     and the brand is the single most visible string on the page. */
   V.siteName = function () {
     var blog = A.state.blog || {};
-    return String(blog["博客标题"] || "").trim() || "Antiphon";
+    var authored = String(blog["博客标题"] || "").trim();
+    var localized = A.contentText("博客标题", authored).trim();
+    return localized || authored || "Antiphon";
   };
 
   V.renderShell = function () {
     var blog = A.state.blog;
     var mode = document.body.getAttribute("data-mode") === "night" ? "night" : "day";
+    var subtitle = A.contentText("博客描述（副标题）", blog["博客描述（副标题）"]);
     var masthead = document.getElementById("masthead");
     var nav = V.navItems()
       .map(function (item) {
@@ -284,10 +296,10 @@ window.Antiphon = window.Antiphon || {};
       '<div class="masthead-brand">' +
       '<div>' +
       '<h1 class="blog-title"><a href="./index.html?type=internal&function=article_list" data-internal data-nav-key="home">' +
-      A.esc(blog["博客标题"] || V.siteName()) +
+      A.esc(V.siteName()) +
       "</a></h1>" +
-      (blog["博客描述（副标题）"]
-        ? '<p class="blog-subtitle">' + A.esc(blog["博客描述（副标题）"]) + "</p>"
+      (subtitle
+        ? '<p class="blog-subtitle">' + A.esc(subtitle) + "</p>"
         : "") +
       "</div>" +
       '<div class="masthead-mark" aria-hidden="true">' + V.sigil(30) +
@@ -306,7 +318,9 @@ window.Antiphon = window.Antiphon || {};
   V.licenseText = function () {
     var blog = A.state.blog;
     if (blog["不使用全站内容授权协议"] === true) return "";
-    var note = String(blog["全站内容授权说明"] || "").trim();
+    /* 全站内容授权说明 is authored prose, so the content sidecar may translate
+       it. The licence id itself is a proper name and is never translated. */
+    var note = A.contentText("全站内容授权说明", blog["全站内容授权说明"]).trim();
     if (note) return note;
     var license = String(blog["全站内容授权协议"] || "").trim();
     if (!license) return "";
@@ -327,7 +341,7 @@ window.Antiphon = window.Antiphon || {};
     var footer = document.getElementById("footer");
     var year = new Date().getFullYear();
     var license = V.licenseText();
-    var bottomText = String(blog["底部信息（格式为markdown）"] || "").trim();
+    var bottomText = A.contentText("底部信息（格式为markdown）", blog["底部信息（格式为markdown）"]).trim();
     var bottomHtml = "";
     if (bottomText) {
       try {
@@ -346,7 +360,7 @@ window.Antiphon = window.Antiphon || {};
       '<div class="footer-inner">' +
       '<div class="footer-grid">' +
       '<p class="footer-brand footer-colophon">' + V.sigil(13) + "<span>" + A.esc(A.t("COLOPHON")) + "</span></p>" +
-      '<p class="footer-license">© ' + year + " " + A.esc(blog["博客标题"] || "") + (license ? " · " + A.esc(license) : "") + "</p>" +
+      '<p class="footer-license">© ' + year + " " + A.esc(V.siteName()) + (license ? " · " + A.esc(license) : "") + "</p>" +
       '<p class="footer-brand">ANNO ' + A.roman(year) + "</p>" +
       (showVisitor && A.visitor ? '<p class="visitor">' + A.esc(A.t("VISITOR", { id: A.visitor })) + "</p>" : "") +
       '<p class="footer-brand">' + A.esc(A.t("FOOTER_CREDIT")) + "</p>" +
@@ -406,7 +420,7 @@ window.Antiphon = window.Antiphon || {};
   V.announcement = async function () {
     var blog = A.state.blog;
     if (blog["启用网站公告"] !== true) return "";
-    var text = String(blog["网站公告"] || "").trim();
+    var text = A.contentText("网站公告", blog["网站公告"]).trim();
     if (!text) return "";
     var body;
     try {
@@ -474,7 +488,7 @@ window.Antiphon = window.Antiphon || {};
         return (
           '<a class="tag-link" data-internal href="./index.html?type=internal&function=tag&argument=' +
           encodeURIComponent(tag) +
-          '">' + A.esc(tag) + "</a>"
+          '">' + A.esc(A.tagLabel(tag)) + "</a>"
         );
       })
       .join("");
@@ -620,7 +634,7 @@ window.Antiphon = window.Antiphon || {};
     }
     if (!encrypted) cell(A.t("CAT_EXTENT"), A.num(minutes) + " " + A.t("MINUTES"));
     if (sectionCount > 0) cell(A.t("CAT_SECTIONS"), A.num(sectionCount, 2));
-    if (article.tags.length) cell(A.t("RUBRIC"), article.tags.join(" · "), true);
+    if (article.tags.length) cell(A.t("RUBRIC"), article.tags.map(function (tag) { return A.tagLabel(tag); }).join(" · "), true);
     if (!cells.length) return "";
     return '<div class="article-catalog">' + cells.join("") + "</div>";
   };
@@ -799,6 +813,9 @@ window.Antiphon = window.Antiphon || {};
   V.article = async function (filename) {
     var article = A.getArticle(filename);
     if (!article) return V.notFound();
+    /* Localise the authored record before anything reads it, so the title,
+       dek, tags and the <title> all come from one consistent overlay. */
+    article = A.localizeArticle(article);
 
     var blog = A.state.blog;
     var md = blog["Markdown渲染配置"] || {};
@@ -874,6 +891,7 @@ window.Antiphon = window.Antiphon || {};
   V.page = async function (filename) {
     var page = A.getPage(filename);
     if (!page) return V.notFound();
+    page = A.localizePage(page);
     var pageNo = String((page.index || 0) + 1).padStart(3, "0");
 
     if (page.fullHtml) {
@@ -999,7 +1017,7 @@ window.Antiphon = window.Antiphon || {};
         var size = counts[tag] >= max * 0.66 ? "lg" : counts[tag] >= max * 0.34 ? "md" : "sm";
         return (
           '<a class="tag-index-item tag-index-item--' + size + '" data-internal href="./index.html?type=internal&amp;function=tag&amp;argument=' +
-          encodeURIComponent(tag) + '"><span class="name">' + A.esc(tag) + '</span><span class="count">' + counts[tag] + "</span></a>"
+          encodeURIComponent(tag) + '"><span class="name">' + A.esc(A.tagLabel(tag)) + '</span><span class="count">' + counts[tag] + "</span></a>"
         );
       })
       .join("");
@@ -1020,19 +1038,23 @@ window.Antiphon = window.Antiphon || {};
   };
 
   V.tag = function (tagName) {
-    var tag = String(tagName || "");
+    /* The URL argument is the authored tag, which is the routing key. Resolve
+       it back to the canonical name (so a translated ?argument=Light link still
+       filters correctly), then render the label for the active locale. */
+    var canonical = A.tagCanonical(String(tagName || ""));
+    var label = A.tagLabel(canonical);
     var list = A.state.visible.filter(function (article) {
-      return article.tags.indexOf(tag) !== -1;
+      return article.tags.indexOf(canonical) !== -1;
     });
     var rows = list.map(V.entryRow).join("");
     var inner =
       '<section class="home">' +
       V.secHead(A.t("HEAD_TOPIC"), "FOLIA " + A.roman(list.length)) +
-      '<h1 class="article-title">' + A.esc(tag) + "</h1>" +
+      '<h1 class="article-title">' + A.esc(label) + "</h1>" +
       V.ornament() +
       '<div class="entry-list">' + (rows || '<p class="search-empty">' + A.esc(A.t("EMPTY")) + "</p>") + "</div>" +
       "</section>";
-    return { title: A.t("TAG_TITLE", { tag: tag }), html: V.panel(inner, { classification: A.t("RUBRIC"), fileNo: "—", leaf: tag }) };
+    return { title: A.t("TAG_TITLE", { tag: label }), html: V.panel(inner, { classification: A.t("RUBRIC"), fileNo: "—", leaf: label }) };
   };
 
   V.friends = async function () {
@@ -1050,6 +1072,9 @@ window.Antiphon = window.Antiphon || {};
       }
     }
 
+    /* Friend entries are authored records. A sidecar may translate 名称 and 简介
+       per entry, matched by 链接 (the url is the stable identity). */
+    entries = A.contentList("友人帐", entries, "链接");
     var cards = entries
       .map(function (friend, index) {
         if (!friend) return "";
@@ -1075,7 +1100,7 @@ window.Antiphon = window.Antiphon || {};
       .join("");
 
     var noteHtml = "";
-    var note = String(blog["友人帐页面附加信息"] || "").trim();
+    var note = A.contentText("友人帐页面附加信息", blog["友人帐页面附加信息"]).trim();
     if (note) {
       try {
         await A.ensureMarked();
