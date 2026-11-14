@@ -818,25 +818,64 @@ body[dir="rtl"] .prose danger-hint {
    makes it travel with the item's own resolved direction instead.
 
    `inside` alone would then push the first line in by the marker's width while
-   the wrapped lines stayed put. The negative `text-indent` cancels that, so the
+   the wrapped lines stayed put; the negative `text-indent` cancels that, so the
    marker hangs in the indent instead of displacing the text, and every line of
-   the item starts at the same x — the same hanging indent the outside marker
+   the item starts at the same x — the same hanging indent an outside marker
    gives in the LTR locales. `text-indent` is inherited, so direct children of a
-   loose list item (`<li><p>…</p></li>`) reset it. Scoped to RTL: the ten LTR
-   locales keep their existing marker and geometry untouched. */
+   loose list item (`<li><p>…</p></li>`) reset it.
+
+   Two further details make that indent land exactly instead of drifting:
+
+   The marker's advance is not the same for every marker. Chromium sizes the
+   built-in marker against the item's resolved paragraph direction, and for an
+   RTL-resolved item it reserves a full `1.35em` gutter, so a bullet sat ~23px
+   away from the Arabic text it introduces while CJK/Latin bullets sat flush.
+   Giving `::marker` an explicit `content` drops that reserved gutter and makes
+   the advance purely the inked glyph's width (measured 7.54px for `•`).
+   Numbers still widen it — 14.28px for `1.`, 24.48px for `10.` — so the
+   indent is calibrated per list type below, with the two-digit step covered by
+   `:nth-child(n + 10)`.
+
+   The list padding is symmetric rather than start-only. With `plaintext` a
+   CJK/Latin item resolves `inline-end` to the left, so its negative
+   `text-indent` used to pull its first line 4–7px past the list box, out into
+   the prose margin — the reported overflow, and the piece most likely to clip
+   at 390px. Reserving the same padding on both sides puts a floor under that
+   edge, so no item can leave the box whichever way it resolves. Scoped to RTL:
+   the ten LTR locales keep their existing marker and geometry untouched. */
 body[dir="rtl"] .prose ul,
 body[dir="rtl"] .prose ol {
   list-style-position: inside;
-  padding-inline-start: 0;
+  padding-inline: 1.35em;
 }
 
 body[dir="rtl"] .prose li {
-  padding-inline-start: 1.35em;
-  text-indent: -1.35em;
+  padding-inline-start: 0;
+  text-indent: 0;
 }
 
 body[dir="rtl"] .prose li > * {
   text-indent: 0;
+}
+
+body[dir="rtl"] .prose ul > li::marker {
+  content: "\2022";
+}
+
+body[dir="rtl"] .prose ol > li::marker {
+  content: counter(list-item) ".";
+}
+
+body[dir="rtl"] .prose ul > li {
+  text-indent: -0.41em;
+}
+
+body[dir="rtl"] .prose ol > li {
+  text-indent: -0.77em;
+}
+
+body[dir="rtl"] .prose ol > li:nth-child(n + 10) {
+  text-indent: -1.32em;
 }
 
 /* The stamp hangs off the prose column's end edge; in RTL that is the left
