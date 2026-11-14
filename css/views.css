@@ -1381,7 +1381,7 @@ body:not([data-script]):lang(en) .article-dek {
 
 @media (max-width: 860px) {
   .entry {
-    grid-template-columns: 2.6rem minmax(0, 1fr);
+    grid-template-columns: 4.2rem minmax(0, 1fr);
   }
   .entry-side {
     display: none;
@@ -1390,10 +1390,10 @@ body:not([data-script]):lang(en) .article-dek {
     grid-template-columns: minmax(0, 1fr);
   }
   /* single column here, but the ledger still has its NO. gutter: hold the
-     lead's copy on the same axis as the entry titles (2.6rem + 1.5rem, minus
+     lead's copy on the same axis as the entry titles (4.2rem + 1.5rem, minus
      the 3px stripe gutter the lead already carries) */
   .lead-body {
-    padding-inline-start: calc(2.6rem + 1.5rem - 3px);
+    padding-inline-start: calc(4.2rem + 1.5rem - 3px);
   }
   .lead-fig {
     flex-direction: row;
